@@ -1,0 +1,28 @@
+{
+  "name": "social-media-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eslamsaeed880/Social-Media-App.git"
+  },
+  "keywords": [],
+  "author": "Eslam Saeed",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Eslamsaeed880/Social-Media-App/issues"
+  },
+  "homepage": "https://github.com/Eslamsaeed880/Social-Media-App#readme",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.1.5",
+    "nodemon": "^3.1.11"
+  }
+}
