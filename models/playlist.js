@@ -33,7 +33,7 @@ const playlistSchema = new Schema({
     }
 }, { timestamps: true });
 
-playlistSchema.index({ createdBy: 1, name: 'text' }, { unique: true });
+playlistSchema.index({ createdBy: 1, name: 1 }, { unique: true });
 
 const Playlist = mongoose.model('Playlist', playlistSchema);
 
