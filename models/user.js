@@ -14,6 +14,37 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    profilePicture: {
+        publicId: String,
+        url: String
+    },
+    coverImage: {
+        publicId: String,
+        url: String
+    },
+    bio: {
+        type: String,
+        maxLength: 300,
+        default: ""
+    },
+    channelTags: {
+        type: [String],
+        default: []
+    },
+    socialLinks: {
+        x: String,
+        instagram: String,
+        facebook: String,
+        website: String
+    },
+    watchedVideos: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Video'
+    }],
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
     phone: {
         type: String,
         validate: {
@@ -56,7 +87,7 @@ const userSchema = new Schema({
     resetTokenExpiry: {
         type: Date,
         default: null
-    }
+    },
 }, {minimize: false, timestamps: true});
 
 const user = mongoose.model('User', userSchema);
