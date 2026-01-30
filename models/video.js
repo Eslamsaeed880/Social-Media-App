@@ -79,7 +79,7 @@ const videoSchema = new Schema({
         enum: ['all', '18+'],
         default: 'all'
     }
-});
+}, { timestamps: true });
 
 videoSchema.plugin(mongooseAggregatePaginate);
 
