@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import { Schema } from 'mongoose';
 
 const subscriptionSchema = new Schema({
-    userId: {
+    channelId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
         required: true
@@ -17,6 +17,8 @@ const subscriptionSchema = new Schema({
         default: true
     }
 }, { timestamps: true });
+
+subscriptionSchema.index({ subscriberId: 1, channelId: 1 }, { unique: true });
 
 const Subscription = mongoose.model('Subscription', subscriptionSchema);
 
