@@ -28,7 +28,7 @@ export const refreshToken = async (req, res) => {
 
 }
 // !@Desc: Implement change password logic
-// @route: POST /api/v1/users/change-password
+// @route: PATCH /api/v1/users/change-password
 // Access: Private
 export const changePassword = async (req, res) => {
 
@@ -84,7 +84,7 @@ export const passwordResetRequest = async (req, res) => {
 }
 
 // !@Desc: Implement password reset logic
-// @route: POST /api/v1/users/reset-password
+// @route: PATCH /api/v1/users/reset-password
 // Access: Private
 export const resetPassword = async (req, res) => {
     
