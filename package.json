@@ -20,10 +20,12 @@
   },
   "homepage": "https://github.com/Eslamsaeed880/Social-Media-App#readme",
   "dependencies": {
+    "cloudinary": "^2.9.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "mongoose": "^9.1.5",
     "mongoose-aggregate-paginate-v2": "^1.1.4",
+    "multer": "^2.0.2",
     "nodemon": "^3.1.11"
   }
 }
