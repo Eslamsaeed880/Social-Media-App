@@ -143,11 +143,18 @@ export const updateCover = async (req, res) => {
 
 }
 
-// !@Desc: Implement get user profile by ID logic
-// @route: GET /api/v1/users/:id
+// @Desc: Implement get user profile by ID logic
+// @route: GET /api/v1/users/:username
 // Access: Public
 export const getUserProfile = async (req, res) => {
+    try {
+        const { username } = req.params;
+        const user = await User.findOne({ username }).lean().select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos');
+        return res.status(200).json(new APIResponse(200, { user }, "User profile retrieved successfully"));
 
+    } catch (error) {
+        throw new APIError(500, error.message);
+    }
 }
 
 // !@Desc: Implement get user activity history logic

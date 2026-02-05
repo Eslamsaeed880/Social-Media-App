@@ -35,8 +35,6 @@ router.post("/google/callback", googleLoginCallback);
 
 router.post("/password-reset-request", passwordResetRequest);
 
-router.patch("/reset-password/:token", resetPassword);
-
 router.patch("/change-password", isAuth, changePassword);
 
 router.get("/history", isAuth, getHistory);
@@ -48,5 +46,8 @@ router.put("/:username", isAuth, updateUserProfile);
 router.patch("/:username/avatar", isAuth, upload.single('avatar'), updateAvatar);
 
 router.patch("/:username/cover", isAuth, upload.single('cover'), updateCover);
+
+router.patch("/reset-password/:token", resetPassword);
+
 export default router;
 
