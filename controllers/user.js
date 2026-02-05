@@ -2,7 +2,6 @@ import User from '../models/user.js';
 import APIError from '../utils/APIError.js';
 import APIResponse from '../utils/APIResponse.js';
 import { uploadToCloudinary } from '../utils/cloudinary.js';
-import bcrypt from 'bcrypt'
 import config from '../config/config.js';
 import transporter from '../config/transporter.js';
 
@@ -84,7 +83,7 @@ export const signUp = async (req, res) => {
     }
 }
 
-// !@Desc: Implement user login logic
+// @Desc: Implement user login logic
 // @route: POST /api/v1/users/login
 // Access: Public
 export const login = async (req, res) => {
@@ -109,17 +108,24 @@ export const login = async (req, res) => {
     }
 }
 
+// !@Desc: Implement Google login logic
+// @route: POST /api/v1/users/google
+// Access: Public
+export const googleLogin = async (req, res) => {
+    
+}
+
+// !@Desc: Implement Google login callback logic
+// @route: POST /api/v1/users/google/callback
+// Access: Public
+export const googleLoginCallback = async (req, res) => {
+    
+}
+
 // !@Desc: Implement change password logic
 // @route: PATCH /api/v1/users/change-password
 // Access: Private
 export const changePassword = async (req, res) => {
-
-}
-
-// !@Desc: Implement get current user profile logic
-// @route: GET /api/v1/users/me
-// Access: Private
-export const getCurrentUserProfile = async (req, res) => {
 
 }
 

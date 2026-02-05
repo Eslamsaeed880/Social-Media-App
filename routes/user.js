@@ -5,14 +5,15 @@ import {
     signUp, 
     login, 
     resetPassword, 
-    changePassword, 
-    getCurrentUserProfile,
+    changePassword,
     updateAvatar, 
     updateCover, 
     updateUserProfile ,
     getUserProfile,
     getHistory,
-    passwordResetRequest
+    passwordResetRequest,
+    googleLogin,
+    googleLoginCallback,
 } from "../controllers/user.js";
 import isAuth from "../middlewares/isAuth.js";
 
@@ -28,21 +29,23 @@ router.post("/signup",
 
 router.post("/login", login);
 
+router.post("/google", googleLogin);
+
+router.post("/google/callback", googleLoginCallback);
+
 router.post("/password-reset-request", passwordResetRequest);
 
 router.patch("/reset-password/:token", resetPassword);
 
 router.patch("/change-password", changePassword);
 
-router.get("/me", getCurrentUserProfile);
+router.get("/:username", getUserProfile);
 
-router.put("/me", updateUserProfile);
+router.put("/:username", updateUserProfile);
 
-router.patch("/me/avatar", upload.single('avatar'), updateAvatar);
+router.patch("/:username/avatar", upload.single('avatar'), updateAvatar);
 
-router.patch("/me/cover", upload.single('cover'), updateCover);
-
-router.get("/c/:username", getUserProfile);
+router.patch("/:username/cover", upload.single('cover'), updateCover);
 
 router.get("/history", getHistory);
 
