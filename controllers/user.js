@@ -6,7 +6,6 @@ import bcrypt from 'bcrypt'
 import config from '../config/config.js';
 import transporter from '../config/transporter.js';
 
-
 // @Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
 // Access: Public
@@ -97,8 +96,12 @@ export const login = async (req, res) => {
         const isMatch = await existingUser.comparePassword(user.password);
     
         if(isMatch) {
-            const response = new APIResponse(200, { user: existingUser }, "Login successful");
-            res.status(response.statusCode).json(response);
+            const token = existingUser.generateToken();
+            const response = new APIResponse(200, { user: existingUser, token }, "Login successful");
+
+            res
+                .status(response.statusCode)
+                .json(response);
         }
 
     } catch (error) {
@@ -106,19 +109,6 @@ export const login = async (req, res) => {
     }
 }
 
-// !@Desc: Implement logout logic
-// @route: POST /api/v1/users/logout
-// Access: Public
-export const logout = async (req, res) => {
-
-}
-
-// !@Desc: Implement token refresh logic
-// @route: POST /api/v1/users/refresh-token
-// Access: Public
-export const refreshToken = async (req, res) => {
-
-}
 // !@Desc: Implement change password logic
 // @route: PATCH /api/v1/users/change-password
 // Access: Private

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Schema } from 'mongoose';
 import bcrypt from 'bcrypt';
 import config from '../config/config.js';
+import jwt from 'jsonwebtoken';
 
 const userSchema = new Schema({
     fullName: {
@@ -106,6 +107,17 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 }
+
+userSchema.methods.generateToken = function () {
+    return jwt.sign({ 
+        id: this._id, 
+        role: this.role
+    }, 
+    config.jwtSecretKey, { 
+        expiresIn: config.tokenExpiry 
+    });
+}
+
 
 const user = mongoose.model('User', userSchema);
 
