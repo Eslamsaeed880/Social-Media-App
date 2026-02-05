@@ -14,6 +14,12 @@ const config = {
         apiKey: process.env.CLOUDINARY_API_KEY,
         apiSecret: process.env.CLOUDINARY_API_SECRET,
     },
+    mail: {
+        password: process.env.NODEMAILER_PASSWORD,
+        sender: process.env.MAIL_SENDER
+    },
+
+    bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS),
 
     corsOrigin: process.env.CORS_ORIGIN,
 }

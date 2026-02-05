@@ -1,10 +1,91 @@
 import User from '../models/user.js';
+import APIError from '../utils/APIError.js';
+import APIResponse from '../utils/APIResponse.js';
+import { uploadToCloudinary } from '../utils/cloudinary.js';
+import bcrypt from 'bcrypt'
+import config from '../config/config.js';
+import transporter from '../config/transporter.js';
+
 
 // !@Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
 // Access: Public
 export const signUp = async (req, res) => {
-    
+    try {
+        const { fullName, username, email, password } = req.body;
+
+        const exists = await User.findOne({ $or: [ { email }, { username } ] });
+        if (exists) {
+            throw new APIError(409, "User with given email or username already exists");
+        }
+
+
+        let profilePicture = undefined;
+        let coverImage = undefined;
+
+        // Handle avatar upload
+        if (req.files && req.files['avatar'] && req.files['avatar'][0]) {
+            const avatarPath = req.files['avatar'][0].path;
+            const uploadedAvatar = await uploadToCloudinary(avatarPath, 'avatars');
+            if (uploadedAvatar && uploadedAvatar.url && uploadedAvatar.public_id) {
+                profilePicture = {
+                    publicId: uploadedAvatar.public_id,
+                    url: uploadedAvatar.url
+                };
+            }
+        }
+
+        // Handle cover upload
+        if (req.files && req.files['cover'] && req.files['cover'][0]) {
+            const coverPath = req.files['cover'][0].path;
+            const uploadedCover = await uploadToCloudinary(coverPath, 'covers');
+            if (uploadedCover && uploadedCover.url && uploadedCover.public_id) {
+                coverImage = {
+                    publicId: uploadedCover.public_id,
+                    url: uploadedCover.url
+                };
+            }
+        }
+
+        const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
+
+
+        // Only assign profilePicture/coverImage if they are defined and not empty
+        const userData = {
+            fullName,
+            username,
+            email,
+            password: hashedPassword,
+        };
+
+        if (profilePicture && profilePicture.publicId && profilePicture.url) {
+            userData.profilePicture = profilePicture;
+        } else {
+            delete userData.profilePicture;
+        }
+        if (coverImage && coverImage.publicId && coverImage.url) {
+            userData.coverImage = coverImage;
+        } else {
+            delete userData.coverImage;
+        }
+
+        await transporter.sendMail({
+            to: userData.email,
+            from: config.mail.sender,
+            subject: 'Welcome to Our Social Media App!',
+            html: `<h2>Hi ${username},</h2><br><br>Thank you for signing up for our social media app! We're excited to have you on board.<br><br>Best regards,<br>The Team`
+        });
+
+        const newUser = new User(userData);
+
+        await newUser.save();
+
+        const response = new APIResponse(201, { createdUser: userData }, "User registered successfully");
+        res.status(response.statusCode).json(response);
+
+    } catch (error) {
+        throw new APIError(500, error.message);
+    }
 }
 
 // !@Desc: Implement user login logic
