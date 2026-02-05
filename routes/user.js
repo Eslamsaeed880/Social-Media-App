@@ -37,17 +37,16 @@ router.post("/password-reset-request", passwordResetRequest);
 
 router.patch("/reset-password/:token", resetPassword);
 
-router.patch("/change-password", changePassword);
+router.patch("/change-password", isAuth, changePassword);
+
+router.get("/history", isAuth, getHistory);
 
 router.get("/:username", getUserProfile);
 
-router.put("/:username", updateUserProfile);
+router.put("/:username", isAuth, updateUserProfile);
 
-router.patch("/:username/avatar", upload.single('avatar'), updateAvatar);
+router.patch("/:username/avatar", isAuth, upload.single('avatar'), updateAvatar);
 
-router.patch("/:username/cover", upload.single('cover'), updateCover);
-
-router.get("/history", getHistory);
-
+router.patch("/:username/cover", isAuth, upload.single('cover'), updateCover);
 export default router;
 

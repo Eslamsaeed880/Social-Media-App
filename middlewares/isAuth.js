@@ -15,7 +15,7 @@ const isAuth = async (req, res, next) => {
     let decodedToken;
     try {
         decodedToken = await jwt.verify(token, config.jwtSecretKey);
-        console.log('Decoded Token:', decodedToken);
+        console.log('Decoded Token:', authHeader);
     } catch (err) {
         return next(new APIError(500, 'Token verification failed', { errors: err.message }));
     }
