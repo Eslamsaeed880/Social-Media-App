@@ -122,13 +122,6 @@ export const googleLoginCallback = async (req, res) => {
     
 }
 
-// !@Desc: Implement change password logic
-// @route: PATCH /api/v1/users/change-password
-// Access: Private
-export const changePassword = async (req, res) => {
-
-}
-
 // !@Desc: Implement update user profile logic
 // @route: PUT /api/v1/users/me
 // Access: Private
@@ -158,10 +151,9 @@ export const getUserProfile = async (req, res) => {
 }
 
 // !@Desc: Implement get user activity history logic
-// @route: GET /api/v1/users/me/history
+// @route: GET /api/v1/users/history
 // Access: Private
 export const getHistory = async (req, res) => {
-
 }
 
 // !@Desc: Implement password reset request logic
@@ -176,4 +168,29 @@ export const passwordResetRequest = async (req, res) => {
 // Access: Private
 export const resetPassword = async (req, res) => {
     
+}
+
+// @Desc: Implement change password logic
+// @route: PATCH /api/v1/users/change-password
+// Access: Private
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+        const isMatch = await user.comparePassword(currentPassword);
+
+        if(!isMatch) {
+            throw new APIError(400, "Current password is incorrect");
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        const response = new APIResponse(200, null, "Password changed successfully");
+        res.status(response.statusCode).json(response);
+
+    } catch (error) {
+        throw new APIError(500, error.message);
+    }
 }
