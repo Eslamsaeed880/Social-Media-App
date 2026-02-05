@@ -7,7 +7,7 @@ import config from '../config/config.js';
 import transporter from '../config/transporter.js';
 
 
-// !@Desc: Implement user sign-up logic
+// @Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
 // Access: Public
 export const signUp = async (req, res) => {
@@ -47,15 +47,12 @@ export const signUp = async (req, res) => {
             }
         }
 
-        const hashedPassword = await bcrypt.hash(password, config.bcryptSaltRounds);
-
-
         // Only assign profilePicture/coverImage if they are defined and not empty
         const userData = {
             fullName,
             username,
             email,
-            password: hashedPassword,
+            password,
         };
 
         if (profilePicture && profilePicture.publicId && profilePicture.url) {
@@ -80,7 +77,7 @@ export const signUp = async (req, res) => {
 
         await newUser.save();
 
-        const response = new APIResponse(201, { createdUser: userData }, "User registered successfully");
+        const response = new APIResponse(201, { createdUser: newUser }, "User registered successfully");
         res.status(response.statusCode).json(response);
 
     } catch (error) {
@@ -92,7 +89,21 @@ export const signUp = async (req, res) => {
 // @route: POST /api/v1/users/login
 // Access: Public
 export const login = async (req, res) => {
+    try {
+        const user = req.body;
+        
+        const existingUser = await User.findOne({ email: user.email });
+    
+        const isMatch = await existingUser.comparePassword(user.password);
+    
+        if(isMatch) {
+            const response = new APIResponse(200, { user: existingUser }, "Login successful");
+            res.status(response.statusCode).json(response);
+        }
 
+    } catch (error) {
+        throw new APIError(500, error.message);
+    }
 }
 
 // !@Desc: Implement logout logic

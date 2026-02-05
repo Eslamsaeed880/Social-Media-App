@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import { Schema } from 'mongoose';
+import bcrypt from 'bcrypt';
+import config from '../config/config.js';
 
 const userSchema = new Schema({
     fullName: {
@@ -93,6 +95,17 @@ const userSchema = new Schema({
         default: null
     },
 }, {minimize: false, timestamps: true});
+
+userSchema.pre('save', async function (next) {
+    if(!this.isModified('password')) {
+        return next();
+    }
+    this.password = await bcrypt.hash(this.password, config.bcryptSaltRounds);
+})
+
+userSchema.methods.comparePassword = async function (candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+}
 
 const user = mongoose.model('User', userSchema);
 
