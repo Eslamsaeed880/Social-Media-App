@@ -124,7 +124,7 @@ export const googleLoginCallback = async (req, res) => {
     
 }
 
-// !@Desc: Implement update user profile logic
+// @Desc: Implement update user profile logic
 // @route: PUT /api/v1/users/@:username
 // Access: Private
 export const updateUserProfile = async (req, res, next) => {
@@ -159,17 +159,49 @@ export const updateUserProfile = async (req, res, next) => {
     }
 }
 
-// !@Desc: Implement update user avatar logic
-// @route: PATCH /api/v1/users/@:username/avatar
+// @Desc: Implement update user profile picture logic
+// @route: PATCH /api/v1/users/@:username/profile-pic
 // Access: Private
-export const updateAvatar = async (req, res) => {
+export const updateProfilePic = async (req, res, next) => {
+    try {
+        const { username } = req.params;
+        const user = await User
+            .findOne({ username })
+            .select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos');
     
+        if (user._id.toString() !== req.user.id) {
+            return next(new APIError(403, "Unauthorized to update this profile"));
+        }
+    
+        if (!req.file) {
+            user.profilePicture.publicId = undefined;
+            user.profilePicture.url = undefined;
+            await user.save();
+            const response = new APIResponse(200, { updatedUser: user }, "User avatar removed successfully");
+            return res.status(response.statusCode).json(response);
+        }
+    
+        const avatarPath = req.file.path;
+        const uploadedAvatar = await uploadToCloudinary(avatarPath, 'avatars');
+    
+        if (uploadedAvatar && uploadedAvatar.url && uploadedAvatar.public_id) {
+            user.profilePicture = {
+                publicId: uploadedAvatar.public_id,
+                url: uploadedAvatar.url
+            };
+            await user.save();
+            const response = new APIResponse(200, { updatedUser: user }, "User avatar updated successfully");
+            res.status(response.statusCode).json(response);
+        }
+    } catch (error) {
+        return next(new APIError(500, "Failed to update user avatar", { errors: error.message }));
+    }
 }
 
 // !@Desc: Implement update user cover logic
 // @route: PATCH /api/v1/users/@:username/cover
 // Access: Private
-export const updateCover = async (req, res) => {
+export const updateCover = async (req, res, next) => {
 
 }
 
@@ -186,7 +218,7 @@ export const getUserProfile = async (req, res, next) => {
     }
 }
 
-// !@Desc: Implement get user activity history logic
+// @Desc: Implement get user activity history logic
 // @route: GET /api/v1/users/history
 // Access: Private
 export const getHistory = async (req, res, next) => {

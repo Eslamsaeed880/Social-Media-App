@@ -6,7 +6,7 @@ import {
     login, 
     resetPassword, 
     changePassword,
-    updateAvatar, 
+    updateProfilePic, 
     updateCover, 
     updateUserProfile ,
     getUserProfile,
@@ -43,7 +43,7 @@ router.get("/@:username", getUserProfile);
 
 router.put("/@:username", isAuth, updateUserProfile);
 
-router.patch("/@:username/avatar", isAuth, upload.single('avatar'), updateAvatar);
+router.patch("/@:username/profile-pic", isAuth, upload.single('avatar'), updateProfilePic);
 
 router.patch("/@:username/cover", isAuth, upload.single('cover'), updateCover);
 
