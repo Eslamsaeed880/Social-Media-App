@@ -12,10 +12,10 @@ import {
     getUserProfile,
     getHistory,
     passwordResetRequest,
-    googleLogin,
     googleLoginCallback,
 } from "../controllers/user.js";
 import isAuth from "../middlewares/isAuth.js";
+import passport from "passport";
 
 const router = express.Router();
 
@@ -29,9 +29,9 @@ router.post("/signup",
 
 router.post("/login", login);
 
-router.post("/google", googleLogin);
+router.post("/google", passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.post("/google/callback", googleLoginCallback);
+router.post("/google/callback", passport.authenticate('google', { session: false, failureRedirect: '/login' }), googleLoginCallback);
 
 router.post("/password-reset-request", passwordResetRequest);
 

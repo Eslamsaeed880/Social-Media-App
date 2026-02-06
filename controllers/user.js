@@ -4,6 +4,7 @@ import APIResponse from '../utils/APIResponse.js';
 import { uploadToCloudinary } from '../utils/cloudinary.js';
 import config from '../config/config.js';
 import transporter from '../config/transporter.js';
+import jwt from 'jsonwebtoken';
 
 // @Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
@@ -16,7 +17,6 @@ export const signUp = async (req, res, next) => {
         if (exists) {
             return next(new APIError(409, "User with given email or username already exists"));
         }
-
 
         let profilePicture = undefined;
         let coverImage = undefined;
@@ -110,18 +110,25 @@ export const login = async (req, res, next) => {
     }
 }
 
-// !@Desc: Implement Google login logic
-// @route: POST /api/v1/users/google
-// Access: Public
-export const googleLogin = async (req, res) => {
-    
-}
-
-// !@Desc: Implement Google login callback logic
-// @route: POST /api/v1/users/google/callback
+// @Desc: Implement Google login callback logic
+// @route: GET /api/v1/users/google/callback
 // Access: Public
 export const googleLoginCallback = async (req, res) => {
-    
+    try {
+        const token = jwt.sign(
+            { 
+                id: req.user._id, 
+                role: req.user.role 
+            }, 
+            config.jwtSecretKey, 
+            { expiresIn: config.tokenExpiry }
+        );
+        
+        const response = new APIResponse(200, { user: req.user, token }, "Google authentication successful");
+        res.status(response.statusCode).json(response);
+    } catch (error) {
+        return res.status(500).json(new APIResponse(500, null, "Google authentication callback failed", { errors: error.message }));
+    }
 }
 
 // @Desc: Implement update user profile logic
@@ -198,8 +205,8 @@ export const updateProfilePic = async (req, res, next) => {
         return next(new APIError(500, "Failed to update user avatar", { errors: error.message }));
     }
 }
+
 // @Desc: Implement update user cover logic
-// !@Desc: Implement update user cover logic
 // @route: PATCH /api/v1/users/@:username/cover
 // Access: Private
 export const updateCover = async (req, res, next) => {

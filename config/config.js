@@ -24,6 +24,10 @@ const config = {
     bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS),
 
     corsOrigin: process.env.CORS_ORIGIN,
+
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    googleCallbackURL: process.env.GOOGLE_CALLBACK_URL
 }
 
 export default config;

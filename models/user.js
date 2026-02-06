@@ -44,7 +44,7 @@ const userSchema = new Schema({
         facebook: String,
         website: String
     },
-    watchedVideos: [{
+    watchedVideos: [    {
         type: Schema.Types.ObjectId,
         ref: 'Video'
     }],
