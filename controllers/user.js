@@ -189,6 +189,7 @@ export const updateProfilePic = async (req, res, next) => {
                 publicId: uploadedAvatar.public_id,
                 url: uploadedAvatar.url
             };
+
             await user.save();
             const response = new APIResponse(200, { updatedUser: user }, "User avatar updated successfully");
             res.status(response.statusCode).json(response);
@@ -197,12 +198,44 @@ export const updateProfilePic = async (req, res, next) => {
         return next(new APIError(500, "Failed to update user avatar", { errors: error.message }));
     }
 }
-
+// @Desc: Implement update user cover logic
 // !@Desc: Implement update user cover logic
 // @route: PATCH /api/v1/users/@:username/cover
 // Access: Private
 export const updateCover = async (req, res, next) => {
+    try {
+        const { username } = req.params;
+        
+        const user = await User.findOne({ username, _id: req.user.id }).select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos');
+    
+        if (!user) {
+            return next(new APIError(403, "Unauthorized to update this profile"));
+        }
+    
+        if (!req.file) {
+            user.coverImage.publicId = undefined;
+            user.coverImage.url = undefined;
+            await user.save();
+            const response = new APIResponse(200, { updatedUser: user }, "User cover image removed successfully");
+            return res.status(response.statusCode).json(response);
+        }
+    
+        const coverPath = req.file.path;
+        const uploadedCover = await uploadToCloudinary(coverPath, 'covers');
+    
+        if (uploadedCover && uploadedCover.url && uploadedCover.public_id) {
+            user.coverImage = {
+                publicId: uploadedCover.public_id,
+                url: uploadedCover.url
+            };
+            await user.save();
+            const response = new APIResponse(200, { updatedUser: user }, "User cover image updated successfully");
+            res.status(response.statusCode).json(response);
+        }
 
+    } catch (error) {
+        return next(new APIError(500, "Failed to update user cover image", { errors: error.message }));
+    }
 }
 
 // @Desc: Implement get user profile by ID logic
