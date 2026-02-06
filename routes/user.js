@@ -4,14 +4,14 @@ import express from 'express';
 import { 
     signUp, 
     login, 
-    resetPassword, 
+    confirmResetPassword, 
     changePassword,
     updateProfilePic, 
     updateCover, 
     updateUserProfile ,
     getUserProfile,
     getHistory,
-    passwordResetRequest,
+    resetPassword,
     googleLoginCallback,
 } from "../controllers/user.js";
 import isAuth from "../middlewares/isAuth.js";
@@ -33,7 +33,9 @@ router.post("/google", passport.authenticate('google', { scope: ['profile', 'ema
 
 router.post("/google/callback", passport.authenticate('google', { session: false, failureRedirect: '/login' }), googleLoginCallback);
 
-router.post("/password-reset-request", passwordResetRequest);
+router.post("/password-reset", resetPassword);
+
+router.patch("/confirm-reset-password", confirmResetPassword);
 
 router.patch("/change-password", isAuth, changePassword);
 
@@ -46,8 +48,6 @@ router.put("/@:username", isAuth, updateUserProfile);
 router.patch("/@:username/profile-pic", isAuth, upload.single('avatar'), updateProfilePic);
 
 router.patch("/@:username/cover", isAuth, upload.single('cover'), updateCover);
-
-router.patch("/reset-password/:token", resetPassword);
 
 export default router;
 

@@ -5,6 +5,8 @@ import { uploadToCloudinary } from '../utils/cloudinary.js';
 import config from '../config/config.js';
 import transporter from '../config/transporter.js';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 // @Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
@@ -280,18 +282,123 @@ export const getHistory = async (req, res, next) => {
     }
 };
 
-// !@Desc: Implement password reset request logic
+// @Desc: Implement password reset request logic
 // @route: POST /api/v1/users/password-reset-request
 // Access: Private
-export const passwordResetRequest = async (req, res) => {
-    
+export const resetPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+        const resetToken = crypto.randomBytes(32).toString('hex');
+
+        user.resetToken = resetToken;
+        user.resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour from now
+
+        await user.save();
+
+        const resetLink = `${process.env.FRONTEND_URL}/confirm-reset-password?token=${resetToken}`;
+
+        await transporter.sendMail({
+            to: email,
+            from: config.mail.sender,
+            subject: 'Password Reset Request',
+            html: `
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+                    <h2 style="color: #333;">Reset Your Password</h2>
+                    <p>Hello ${user.username},</p>
+                    <p>We received a request to reset your password. If you made this request, click the button below:</p>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="${resetLink}" 
+                           style="background-color: #007bff; color: white; padding: 15px 30px; 
+                                  text-decoration: none; border-radius: 5px; display: inline-block;
+                                  font-weight: bold; font-size: 16px;">
+                            Reset My Password
+                        </a>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                        <strong>This link will expire in 1 hour</strong> for security reasons.
+                    </p>
+                    
+                    <p style="color: #666; font-size: 14px;">
+                        If you didn't request this password reset, please ignore this email. 
+                        Your password will remain unchanged.
+                    </p>
+                    
+                    <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                    
+                    <p style="color: #888; font-size: 12px;">
+                        If the button above doesn't work, copy and paste this link into your browser:<br>
+                        <a href="${resetLink}" style="color: #007bff; word-break: break-all;">${resetLink}</a>
+                    </p>
+                    
+                    <p style="color: #888; font-size: 12px;">
+                        This email was sent from our e-commerce platform. Please do not reply to this email.
+                    </p>
+                </div>
+            `
+        }, (err, info) => {
+            if(!err) {
+                console.log("Reset Email Sent Successfully");
+            }
+        });
+
+        res.status(200).json({
+            message: "Password reset email sent successfully. Please check your inbox."
+        });
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, "Failed to process password reset request", { errors: error.message }));
+    }
 }
 
-// !@Desc: Implement password reset logic
+// @Desc: Implement confirm password reset logic
 // @route: PATCH /api/v1/users/reset-password
 // Access: Private
-export const resetPassword = async (req, res) => {
-    
+export const confirmResetPassword = async (req, res, next) => {
+    try {
+        const { password } = req.body;
+        const { token } = req.query;
+
+        const user = await User.findOne({
+            resetToken: token,
+            resetTokenExpiry: { $gt: new Date() } 
+        });
+
+        const saltRounds = parseInt(config.bcryptSaltRounds);
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        user.password = hashedPassword;
+        user.resetToken = null;
+        user.resetTokenExpiry = null;
+        await user.save();
+
+        await transporter.sendMail({
+            to: user.email,
+            from: config.mail.sender,
+            subject: 'Password Reset Successful',
+            html: `
+                <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
+                    <h2 style="color: #28a745;">✅ Password Reset Successful</h2>
+                    <p>Hello ${user.name},</p>
+                    <p>Your password has been successfully reset. You can now log in with your new password.</p>
+                    <p style="color: #666; font-size: 14px;">
+                        If you didn't make this change, please contact our support team immediately.
+                    </p>
+                </div>
+            `
+        });
+
+        const response = new APIResponse(200, null, "Password reset successful");
+        res.status(response.statusCode).json(response);
+
+    } catch (err) {
+        console.log(err);
+        return next(new APIError(500, "Failed to reset password", { errors: err.message }));
+    }
 }
 
 // @Desc: Implement change password logic
@@ -306,10 +413,15 @@ export const changePassword = async (req, res, next) => {
         if(!isMatch) {
             return next(new APIError(400, "Current password is incorrect"));
         }
-        user.password = newPassword;
+        
+        const saltRounds = parseInt(config.bcryptSaltRounds);
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+        user.password = hashedPassword;
+        
         await user.save();
         const response = new APIResponse(200, null, "Password changed successfully");
         res.status(response.statusCode).json(response);
+        
     } catch (error) {
         next(error);
     }
