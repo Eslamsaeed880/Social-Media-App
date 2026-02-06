@@ -9,13 +9,10 @@ const isAuth = async (req, res, next) => {
         return next(new APIError(401, 'Not authenticated'));
     }
 
-    console.log('Auth Header:', authHeader);
-
     const token = authHeader.split(' ')[1];
     let decodedToken;
     try {
         decodedToken = await jwt.verify(token, config.jwtSecretKey);
-        console.log('Decoded Token:', authHeader);
     } catch (err) {
         return next(new APIError(500, 'Token verification failed', { errors: err.message }));
     }

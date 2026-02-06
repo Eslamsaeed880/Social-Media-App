@@ -65,15 +65,15 @@ const userSchema = new Schema({
     gender: {
         type: String,
         enum: ['male', 'female'],
-        required: false
+        default: null
     },
-    Nationality: {
+    location: {
         type: String,
-        required: false
+        default: ""
     },
     birthDay: {
         type: Date,
-        required: false
+        default: null
     },
     authProvider: {
         type: String,
@@ -97,9 +97,9 @@ const userSchema = new Schema({
     },
 }, {minimize: false, timestamps: true});
 
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
     if(!this.isModified('password')) {
-        return next();
+        return ;
     }
     this.password = await bcrypt.hash(this.password, config.bcryptSaltRounds);
 })

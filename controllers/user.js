@@ -8,13 +8,13 @@ import transporter from '../config/transporter.js';
 // @Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
 // Access: Public
-export const signUp = async (req, res) => {
+export const signUp = async (req, res, next) => {
     try {
         const { fullName, username, email, password } = req.body;
 
         const exists = await User.findOne({ $or: [ { email }, { username } ] });
         if (exists) {
-            throw new APIError(409, "User with given email or username already exists");
+            return next(new APIError(409, "User with given email or username already exists"));
         }
 
 
@@ -86,7 +86,7 @@ export const signUp = async (req, res) => {
 // @Desc: Implement user login logic
 // @route: POST /api/v1/users/login
 // Access: Public
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
         const user = req.body;
         
@@ -101,10 +101,12 @@ export const login = async (req, res) => {
             res
                 .status(response.statusCode)
                 .json(response);
+        } else {
+            return next(new APIError(401, "Invalid email or password"));
         }
 
     } catch (error) {
-        throw new APIError(500, error.message);
+        return next(new APIError(401, "Invalid email or password"));
     }
 }
 
@@ -123,44 +125,72 @@ export const googleLoginCallback = async (req, res) => {
 }
 
 // !@Desc: Implement update user profile logic
-// @route: PUT /api/v1/users/me
+// @route: PUT /api/v1/users/@:username
 // Access: Private
-export const updateUserProfile = async (req, res) => {
+export const updateUserProfile = async (req, res, next) => {
+    try {
+        const { username } = req.params;
+        const user = await User.findOne({ username }).select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos -profilePicture -coverImage');
+        if (user._id.toString() === req.user.id) {
+            const fields = [
+                "fullName",
+                "bio",
+                "location",
+                "gender",
+                "birthDay",
+                "socialLinks",
+            ];
 
+            fields.forEach(field => {
+                if (req.body[field] !== undefined) {
+                    user[field] = req.body[field];
+                }
+            });
+
+            await user.save();
+
+            const response = new APIResponse(200, { updatedUser: user }, "User profile updated successfully");
+            res.status(response.statusCode).json(response);
+        } else {
+            return next(new APIError(403, "Unauthorized to update this profile"));
+        }
+    } catch (error) {
+        return next(new APIError(500, "Failed to update user profile", { errors: error.message }));
+    }
 }
 
 // !@Desc: Implement update user avatar logic
-// @route: PATCH /api/v1/users/me/avatar
+// @route: PATCH /api/v1/users/@:username/avatar
 // Access: Private
 export const updateAvatar = async (req, res) => {
     
 }
 
 // !@Desc: Implement update user cover logic
-// @route: PATCH /api/v1/users/me/cover
+// @route: PATCH /api/v1/users/@:username/cover
 // Access: Private
 export const updateCover = async (req, res) => {
 
 }
 
 // @Desc: Implement get user profile by ID logic
-// @route: GET /api/v1/users/:username
+// @route: GET /api/v1/users/@:username
 // Access: Public
-export const getUserProfile = async (req, res) => {
+export const getUserProfile = async (req, res, next) => {
     try {
         const { username } = req.params;
         const user = await User.findOne({ username }).lean().select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos');
         return res.status(200).json(new APIResponse(200, { user }, "User profile retrieved successfully"));
-
     } catch (error) {
-        throw new APIError(500, error.message);
+        next(error);
     }
 }
 
 // !@Desc: Implement get user activity history logic
 // @route: GET /api/v1/users/history
 // Access: Private
-export const getHistory = async (req, res) => {
+export const getHistory = async (req, res, next) => {
+    
 }
 
 // !@Desc: Implement password reset request logic
@@ -180,24 +210,20 @@ export const resetPassword = async (req, res) => {
 // @Desc: Implement change password logic
 // @route: PATCH /api/v1/users/change-password
 // Access: Private
-export const changePassword = async (req, res) => {
+export const changePassword = async (req, res, next) => {
     try {
         const { currentPassword, newPassword } = req.body;
         const userId = req.user.id;
         const user = await User.findById(userId);
         const isMatch = await user.comparePassword(currentPassword);
-
         if(!isMatch) {
-            throw new APIError(400, "Current password is incorrect");
+            return next(new APIError(400, "Current password is incorrect"));
         }
-
         user.password = newPassword;
         await user.save();
-
         const response = new APIResponse(200, null, "Password changed successfully");
         res.status(response.statusCode).json(response);
-
     } catch (error) {
-        throw new APIError(500, error.message);
+        next(error);
     }
 }

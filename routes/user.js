@@ -39,13 +39,13 @@ router.patch("/change-password", isAuth, changePassword);
 
 router.get("/history", isAuth, getHistory);
 
-router.get("/:username", getUserProfile);
+router.get("/@:username", getUserProfile);
 
-router.put("/:username", isAuth, updateUserProfile);
+router.put("/@:username", isAuth, updateUserProfile);
 
-router.patch("/:username/avatar", isAuth, upload.single('avatar'), updateAvatar);
+router.patch("/@:username/avatar", isAuth, upload.single('avatar'), updateAvatar);
 
-router.patch("/:username/cover", isAuth, upload.single('cover'), updateCover);
+router.patch("/@:username/cover", isAuth, upload.single('cover'), updateCover);
 
 router.patch("/reset-password/:token", resetPassword);
 
