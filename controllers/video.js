@@ -4,8 +4,9 @@ import APIResponse from "../utils/APIResponse.js";
 import Video from "../models/video.js";
 import User from "../models/user.js";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
+import VideoCategory from "../models/videoCategory.js";
 
-// !@Desc: Upload a new video
+// @Desc: Upload a new video
 // @route POST /api/v1/videos
 // @Access Private
 export const postVideo = async (req, res, next) => {
@@ -16,14 +17,20 @@ export const postVideo = async (req, res, next) => {
             return next(new APIError(400, 'Title and description are required'));
         }
 
+        if(category) {
+            const cat = await VideoCategory.findOne({ name: { $regex: category, $options: "i" } });
+            
+            if(!cat) {
+                VideoCategory.create({ name: category });
+            }
+        }
+
         if(!req.files || !req.files.videoFile || !req.files.thumbnail) {
             throw new APIError(400, 'Video file and thumbnail are required');
         }
 
         const videoLocalPath = req.files.videoFile[0].path;
         const thumbnailLocalPath = req.files.thumbnail[0].path;
-
-        console.log(videoLocalPath, '\n' +thumbnailLocalPath);
 
         const videoUpload = await uploadToCloudinary(
             videoLocalPath,
@@ -66,7 +73,7 @@ export const postVideo = async (req, res, next) => {
             },
             duration: videoUpload.duration,
             publisherId: req.user.id,
-            category,
+            category: cat.name,
             tags: formattedTags,
             ageRestriction,
             isPublished,
