@@ -327,3 +327,36 @@ export const updateVideo = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Delete video
+// @route DELETE /api/v1/videos/:id
+// @Access Private
+export const deleteVideo = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const video = await Video.findById(id);
+
+        if(!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        if(video.publisherId.toString() !== req.user.id) {
+            return next(new APIError(403, 'You are not allowed to perform this action'));
+        }
+
+        await deleteFromCloudinary(video.videoFile.publicId);
+        await deleteFromCloudinary(video.thumbnail.publicId);
+        await video.deleteOne();
+
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                "Video deleted successfully"
+            )
+        );
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
