@@ -159,8 +159,6 @@ export const getAllVideos = async (req, res, next) => {
 
         const totalResults = await Video.countDocuments(matchStage);
 
-        console.log(page);
-
         pipeline.push(
             {
                 $skip: (+page - 1) * +limit,
@@ -349,6 +347,91 @@ export const deleteVideo = async (req, res, next) => {
                 "Video deleted successfully"
             )
         );
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+export const getMyVideos = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 10, sortBy = 'createdAt', sortType = 'desc', query } = req.query;
+        const userId = req.user.id;
+
+        let pipeline = [];
+        let matchStage = { publisherId: req.user.id };
+
+        matchStage.publisherId = new mongoose.Types.ObjectId(userId);
+
+        if(query) {
+            matchStage.$or = [
+                { title: { $regex: query, $options: "i" } },
+                { description: { $regex: query, $options: "i" } },
+                { tags : { $regex: query, $options: "i" } },
+            ];
+        }
+
+        pipeline.push({ $match: matchStage });
+
+        pipeline.push(
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "publisherId",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [
+                        {
+                            $project: {
+                                username: 1,
+                                fullName: 1,
+                                avatar: 1,
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    owner: { $first: "$owner" }
+                }
+            }
+        );
+
+        if(sortBy && sortType) {
+            pipeline.push({
+                $sort: {
+                    [sortBy]: sortType === "asc" ? 1 : -1,
+                },
+            });
+        }
+
+        const totalResults = await Video.countDocuments(matchStage);
+
+        pipeline.push(
+            {
+                $skip: (+page - 1) * +limit,
+            },
+            {
+                $limit: +limit,
+            }
+        );
+
+        const videos = await Video.aggregate(pipeline);
+
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                {
+                    videos,
+                    totalResults,
+                    currentPage: +page,
+                    totalPages: Math.ceil(totalResults / +limit),
+                },
+                "Videos fetched successfully"
+            )
+        );
+
     } catch (error) {
         console.error(error);
         return next(new APIError(500, 'Server error'));
