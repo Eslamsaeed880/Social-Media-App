@@ -19,4 +19,6 @@ router.post("/", isAuth, upload.fields([
     { name: 'thumbnail', maxCount: 1 }
 ]), postVideo);
 
+router.patch("/:id", isAuth, togglePublishVideo);
+
 export default router;

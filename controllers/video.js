@@ -251,3 +251,33 @@ export const getVideoById = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+export const togglePublishVideo = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const video = await Video.findById(id);
+
+        if(!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        if(video.publisherId.toString() !== req.user.id) {
+            return next(new APIError(403, 'You are not allowed to perform this action'));
+        }
+
+        video.isPublished = !video.isPublished;
+        await video.save();
+
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                { video },
+                `Video ${video.isPublished ? 'published' : 'unpublished'} successfully`
+            )
+        );
+
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
