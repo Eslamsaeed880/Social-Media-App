@@ -17,6 +17,7 @@ export const uploadToCloudinary = async (filePath, folder) => {
         return {
             url: result.secure_url,
             public_id: result.public_id,
+            duration: result.duration,
         };
     } catch (error) {
         console.error('Error uploading to Cloudinary:', error);

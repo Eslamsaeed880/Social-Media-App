@@ -3,6 +3,89 @@ import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import Video from "../models/video.js";
 import User from "../models/user.js";
+import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
+
+// !@Desc: Upload a new video
+// @route POST /api/v1/videos
+// @Access Private
+export const postVideo = async (req, res, next) => {
+    try {
+        const { title, description, tags, category, ageRestriction, isPublished } = req.body;
+
+        if(!title || !description) {
+            return next(new APIError(400, 'Title and description are required'));
+        }
+
+        if(!req.files || !req.files.videoFile || !req.files.thumbnail) {
+            throw new APIError(400, 'Video file and thumbnail are required');
+        }
+
+        const videoLocalPath = req.files.videoFile[0].path;
+        const thumbnailLocalPath = req.files.thumbnail[0].path;
+
+        console.log(videoLocalPath, '\n' +thumbnailLocalPath);
+
+        const videoUpload = await uploadToCloudinary(
+            videoLocalPath,
+            "videos"
+        );
+
+        if(!videoUpload) {
+            return next(new APIError(500, 'Failed to upload video'));
+        }
+
+        const thumbnailUpload = await uploadToCloudinary(
+            thumbnailLocalPath,
+            "thumbnails"
+        );
+
+        if(!thumbnailUpload) {
+            await deleteFromCloudinary(videoUpload.public_id);
+            return next(new APIError(500, 'Failed to upload thumbnail'));
+        }
+
+        let formattedTags = [];
+        if (tags) {
+            try {
+                formattedTags = JSON.parse(tags);
+            } catch (error) {
+                formattedTags = tags.split(',').map(tag => tag.trim());
+            }
+        }
+
+        const video = await Video.create({
+            title,
+            description,
+            videoFile: {
+                publicId: videoUpload.public_id,
+                url: videoUpload.url,
+            },
+            thumbnail: {
+                publicId: thumbnailUpload.public_id,
+                url: thumbnailUpload.url,
+            },
+            duration: videoUpload.duration,
+            publisherId: req.user.id,
+            category,
+            tags: formattedTags,
+            ageRestriction,
+            isPublished,
+        });
+
+        return res.status(201)
+            .json(
+                new APIResponse(
+                    201,
+                    { video },
+                    "Video uploaded successfully"
+                )
+            );
+
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
 
 // @Desc: Get all videos with filtering, sorting, and pagination
 // @route  GET /api/v1/videos?page=1&limit=10&query=tutorials&sortedBy=views&sortType=desc&userId=1ef2d3c4b5a6f7g8h9i0j
@@ -15,7 +98,7 @@ export const getAllVideos = async (req, res, next) => {
 
         if(userId) {
             pipeline.push({
-                $match: { owner: new mongoose.Types.ObjectId(userId) 
+                $match: { publisherId: new mongoose.Types.ObjectId(userId) 
                 },
             });
         }
@@ -41,7 +124,7 @@ export const getAllVideos = async (req, res, next) => {
             {
                 $lookup: {
                     from: "users",
-                    localField: "owner",
+                    localField: "publisherId",
                     foreignField: "_id",
                     as: "owner",
                     pipeline: [
@@ -57,7 +140,7 @@ export const getAllVideos = async (req, res, next) => {
             },
             {
                 $addFields: {
-                    owner: { $first: "$owner"}
+                    publisherId: { $first: "$publisherId"}
                 }
             }
         );

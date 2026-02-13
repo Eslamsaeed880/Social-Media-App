@@ -61,9 +61,7 @@ const videoSchema = new Schema({
         default: 0
     },
     category: {
-        type: Schema.Types.ObjectId,
-        ref: 'VideoCategory',
-        required: true
+        type: String,
     },
     isPublished: {
         type: Boolean,
