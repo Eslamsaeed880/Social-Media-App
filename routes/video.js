@@ -4,6 +4,7 @@ import {
     postVideo,
     getVideoById,
     togglePublishVideo,
+    updateVideo,
 } from '../controllers/video.js';
 import isAuth, { isLoggedIn } from '../middlewares/isAuth.js';
 import { upload } from '../middlewares/multer.js';
@@ -18,6 +19,8 @@ router.post("/", isAuth, upload.fields([
     { name: 'videoFile', maxCount: 1 },
     { name: 'thumbnail', maxCount: 1 }
 ]), postVideo);
+
+router.put("/:id", isAuth, updateVideo);
 
 router.patch("/:id", isAuth, togglePublishVideo);
 

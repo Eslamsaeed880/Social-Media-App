@@ -238,6 +238,9 @@ export const getVideoById = async (req, res, next) => {
             }
         }
 
+        video.views += 1;
+        await video.save();
+
         return res.status(200).json(
             new APIResponse(
                 200,
@@ -252,6 +255,9 @@ export const getVideoById = async (req, res, next) => {
     }
 }
 
+// @Desc: Toggle publish/unpublish video
+// @route PATCH /api/v1/videos/:id
+// @Access Private
 export const togglePublishVideo = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -276,6 +282,46 @@ export const togglePublishVideo = async (req, res, next) => {
             )
         );
 
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Update video details
+// @route PATCH /api/v1/videos/:id
+// @Access Private
+export const updateVideo = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const video = await Video.findById(id);
+
+        if(!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        if(video.publisherId.toString() !== req.user.id) {
+            return next(new APIError(403, 'You are not allowed to perform this action'));
+        }
+
+        const attributesToUpdate = ['title', 'description', 'tags', 'category', 'ageRestriction'];
+
+        attributesToUpdate.forEach(attr => {
+            if(req.body[attr]) {
+                video[attr] = req.body[attr];
+            }
+        });
+        
+        await video.save();
+
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                { video },
+                "Video updated successfully"
+            )
+        );
     } catch (error) {
         console.error(error);
         return next(new APIError(500, 'Server error'));
