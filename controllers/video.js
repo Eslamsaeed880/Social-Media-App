@@ -11,7 +11,12 @@ import VideoCategory from "../models/videoCategory.js";
 // @Access Private
 export const postVideo = async (req, res, next) => {
     try {
-        const { title, description, tags, category, ageRestriction, isPublished } = req.body;
+        const { title, description, tags, category, ageRestriction } = req.body;
+
+        let isPublished = false;
+        if(req.body.isPublished === "true") {
+            isPublished = true;
+        }
 
         if(!title || !description) {
             return next(new APIError(400, 'Title and description are required'));
@@ -103,30 +108,21 @@ export const getAllVideos = async (req, res, next) => {
         const { page = 1, limit = 10, sortBy = 'createdAt', sortType = 'desc', userId, query } = req.query;
 
         let pipeline = [];
+        let matchStage = { isPublished: true };
 
         if(userId) {
-            pipeline.push({
-                $match: { publisherId: new mongoose.Types.ObjectId(userId) 
-                },
-            });
+            matchStage.publisherId = new mongoose.Types.ObjectId(userId);
         }
 
         if(query) {
-            pipeline.push({
-                $match: {
-                    $or: [
-                        { title: { $regex: query, $options: "i" } },
-                        { description: { $regex: query, $options: "i" } },
-                        { tags : { $regex: query, $options: "i" } },
-                        
-                    ],
-                },
-            });
+            matchStage.$or = [
+                { title: { $regex: query, $options: "i" } },
+                { description: { $regex: query, $options: "i" } },
+                { tags : { $regex: query, $options: "i" } },
+            ];
         }
 
-        pipeline.push({
-            $match: { isPublic: true }
-        });
+        pipeline.push({ $match: matchStage });
 
         pipeline.push(
             {
@@ -148,7 +144,7 @@ export const getAllVideos = async (req, res, next) => {
             },
             {
                 $addFields: {
-                    publisherId: { $first: "$publisherId"}
+                    owner: { $first: "$owner" }
                 }
             }
         );
@@ -161,9 +157,7 @@ export const getAllVideos = async (req, res, next) => {
             });
         }
 
-        const totalResults = await Video.countDocuments(
-            pipeline.length > 0 ? pipeline[0].$match : {}
-        );
+        const totalResults = await Video.countDocuments(matchStage);
 
         console.log(page);
 
@@ -202,7 +196,7 @@ export const getAllVideos = async (req, res, next) => {
 // @Access Public
 export const getVideoById = async (req, res, next) => {
     try {
-        const id = req.query.watch;
+        const id = req.params.id;
 
         if(!id) {
             return next(new APIError(400, 'Video ID is required'));
