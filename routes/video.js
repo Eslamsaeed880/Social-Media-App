@@ -2,11 +2,15 @@ import express from 'express';
 import {
     getAllVideos,
     postVideo,
+    getVideoById,
+    togglePublishVideo,
 } from '../controllers/video.js';
-import isAuth from '../middlewares/isAuth.js';
+import isAuth, { isLoggedIn } from '../middlewares/isAuth.js';
 import { upload } from '../middlewares/multer.js';
 
 const router = express.Router();
+
+router.get("/", isLoggedIn, getVideoById);
 
 router.get("/", getAllVideos);
 

@@ -17,8 +17,9 @@ export const postVideo = async (req, res, next) => {
             return next(new APIError(400, 'Title and description are required'));
         }
 
+        let cat;
         if(category) {
-            const cat = await VideoCategory.findOne({ name: { $regex: category, $options: "i" } });
+            cat = await VideoCategory.findOne({ name: { $regex: category, $options: "i" } });
             
             if(!cat) {
                 VideoCategory.create({ name: category });
@@ -187,6 +188,61 @@ export const getAllVideos = async (req, res, next) => {
                     totalPages: Math.ceil(totalResults / +limit),
                 },
                 "Videos fetched successfully"
+            )
+        );
+
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Get video by ID
+// @route GET /api/v1/videos?watch=videoId
+// @Access Public
+export const getVideoById = async (req, res, next) => {
+    try {
+        const id = req.query.watch;
+
+        if(!id) {
+            return next(new APIError(400, 'Video ID is required'));
+        }
+
+        const video = await Video.findById(id).populate({
+            path: 'publisherId',
+            select: 'username fullName avatar',
+        });
+
+        if(!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        
+        if(!video.isPublished && req.user?.id !== video.publisherId._id.toString()) {
+            console.log(req.user);
+            console.log(video.publisherId.toString());
+            return next(new APIError(403, 'You are not allowed to watch this video'));
+        }
+
+        if(req.user) {
+            const user = await User.findById(req.user.id);
+
+            if(user.watchedVideos.some(v => v.toString() === video._id.toString())) {
+                await User.findByIdAndUpdate(req.user.id, {
+                    $pull: { watchedVideos: video._id }
+                });
+            } else {
+                await User.findByIdAndUpdate(req.user.id, {
+                    $push: { watchedVideos: video._id }
+                });
+            }
+        }
+
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                { video },
+                "Video fetched successfully"
             )
         );
 
