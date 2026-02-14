@@ -1,15 +1,13 @@
 import express from 'express';
 import {
-    createCommentOnVideo,
-    replyOnComment,
+    createComment,
 } from '../controllers/comment.js';
 import isAuth from '../middlewares/isAuth.js';
 
 const router = express.Router();
 
-router.post("/", isAuth, replyOnComment);
 
-router.post("/:videoId", isAuth, createCommentOnVideo);
+router.post("/", isAuth, createComment);
 
 
 
