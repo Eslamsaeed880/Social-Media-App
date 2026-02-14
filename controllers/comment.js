@@ -79,3 +79,34 @@ export const replyToComment = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+
+// @Desc: Update a comment
+// @Route: PATCH /api/v1/comments/69907f5c2aaf6241eff371fc
+// @Access: Private
+export const updateComment = async (req, res, next) => {
+    try {
+        const { commentId } = req.params;
+        const { content } = req.body;
+
+        const comment = await Comment.findById(commentId);
+
+        if(!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+
+        if(comment.createdBy.toString() !== req.user.id) {
+            return next(new APIError(403, 'You are not authorized to update this comment'));
+        }
+
+        comment.content = content || comment.content;
+
+        await comment.save();
+        
+        return res.status(200).json(new APIResponse(200, 'Comment updated successfully', comment));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
