@@ -4,56 +4,76 @@ import Comment from "../models/comment.js";
 import Video from "../models/video.js";
 import mongoose from "mongoose"
 
-// @Desc: Create a comment on a video or reply to an existing comment
-// @Route: POST /api/v1/comments?v=698f5cf25d9ca8736cff857e&c=698faf3579a3dda5f68c5ca9
+// @Desc: Create a comment on a video
+// @Route: POST /api/v1/comments/698fa551362e5de95b8a691c
 // @Access: Private
 export const createComment = async (req, res, next) => {
     try {
-        const videoId = req.query.v, commentId = req.query.c;
+        const { videoId } = req.params;
         const { content } = req.body;
         
-        let comment, video;
-        
-        if(commentId) {
-            const parentComment = await Comment.findById(commentId);
+        const video = await Video.findById(videoId);
 
-            if(!parentComment) {
-                return next(new APIError(404, 'Parent comment not found'));
-            }
-
-            video = await Video.findById(parentComment.videoId);
-
-            if (!video) {
-                return next(new APIError(404, 'Video not found'));
-            }
-
-            parentComment.replies.push(new mongoose.Types.ObjectId(commentId));
-            await parentComment.save();
-
-            comment = new Comment({
-                content,
-                videoId: parentComment.videoId,
-                createdBy: req.user.id,
-            });
-        } else if(videoId) {
-            video = await Video.findById(videoId);
-
-            if (!video) {
-                return next(new APIError(404, 'Video not found'));
-            }
-
-            comment = new Comment({
-                content,
-                videoId: video._id,
-                createdBy: req.user.id,
-            });
+        if (!video) {
+            return next(new APIError(404, 'Video not found'));
         }
+
+        const comment = new Comment({
+            content,
+            videoId: video._id,
+            createdBy: req.user.id,
+        });
+        
+        video.comments++;
 
         await comment.save();
         await video.save();
 
         return res.status(201).json(new APIResponse(201, 'Comment created successfully', comment));
         
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Reply to an existing comment
+// @Route: POST /api/v1/comments/reply/698fa551362e5de95b8a691c
+// @Access: Private
+export const replyToComment = async (req, res, next) => {
+    try {
+        const { commentId } = req.params;
+        const { content } = req.body;
+
+        const parentComment = await Comment.findById(commentId);
+
+        if(!parentComment) {
+            return next(new APIError(404, 'Parent comment not found'));
+        }
+
+        const video = await Video.findById(parentComment.videoId);
+
+        if (!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        parentComment.replies.push(new mongoose.Types.ObjectId(commentId));
+        
+        const comment = new Comment({
+            content,
+            videoId: parentComment.videoId,
+            createdBy: req.user.id,
+            parentComment: parentComment._id,
+        });
+
+        video.comments++;
+
+        await comment.save();
+        await parentComment.save();
+        await video.save();
+
+        return res.status(201).json(new APIResponse(201, 'Reply created successfully', comment));
+
     } catch (error) {
         console.log(error);
         return next(new APIError(500, 'Server error'));
