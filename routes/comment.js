@@ -3,6 +3,7 @@ import {
     createComment,
     replyToComment,
     updateComment,
+    deleteComment,
 } from '../controllers/comment.js';
 import isAuth from '../middlewares/isAuth.js';
 
@@ -14,5 +15,7 @@ router.post("/:videoId", isAuth, createComment);
 router.post("/reply/:commentId", isAuth, replyToComment);
 
 router.patch("/:commentId", isAuth, updateComment);
+
+router.delete("/:commentId", isAuth, deleteComment);
 
 export default router;

@@ -110,3 +110,27 @@ export const updateComment = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+export const deleteComment = async (req, res, next) => {
+    try {
+        const { commentId } = req.params;
+
+        const comment = await Comment.findById(commentId);
+
+        if(!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+
+        if(comment.createdBy.toString() !== req.user.id) {
+            return next(new APIError(403, 'You are not authorized to delete this comment'));
+        }
+
+        await comment.deleteOne();
+        
+        return res.status(200).json(new APIResponse(200, 'Comment deleted successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
