@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.post("/", isAuth, likeVideo);
 
+router.delete("/", isAuth, unlikeVideo);
 
 export default router;

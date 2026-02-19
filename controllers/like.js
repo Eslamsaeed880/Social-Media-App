@@ -46,3 +46,39 @@ export const likeVideo = async (req, res, next) => {
     }
 }
 
+// @Desc: Unlike a video or comment
+// Route: delete /api/v1/likes
+// Access: Private
+export const unlikeVideo = async (req, res, next) => {
+    try {
+        const { videoId } = req.body;
+        const { user } = req;
+
+        if (!videoId) {
+            return next(new APIError(400, 'Video ID is required'));
+        }
+
+        const video = await Video.findById(videoId);
+
+        if (!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+        
+        const existingLike = await Like.findOne({ likedBy: user.id, videoId });
+
+        if (!existingLike) {
+            return next(new APIError(400, 'You have not liked this video'));
+        }
+
+        await existingLike.deleteOne();
+        video.likes--;
+
+        await video.save();
+
+        return res.status(200).json(new APIResponse(200, 'Video unliked successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
