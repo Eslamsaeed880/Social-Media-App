@@ -143,3 +143,39 @@ export const getUserSubscriptions = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get all subscribers of a channel
+// Route: GET /api/v1/subscriptions/subscribers
+// Access: Private
+export const getChannelSubscribers = async (req, res, next) => {
+    try {
+        const channelId = req.user.id;
+        const { page = 1, limit = 10 } = req.query;
+
+        if (!channelId) {
+            return next(new APIError(400, 'Channel ID is required'));
+        }
+
+        const skip = (+page - 1) * +limit;
+
+        const [subscriptions, totalSubscribers] = await Promise.all([
+            Subscription.find({ channelId })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(+limit)
+                .populate('subscriberId', 'username profilePicture'),
+            Subscription.countDocuments({ channelId })
+        ]);
+
+        return res.status(200).json(new APIResponse(200, 'Channel subscribers retrieved successfully', {
+            subscribers: subscriptions,
+            totalSubscribers,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalSubscribers / +limit),
+        }));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
