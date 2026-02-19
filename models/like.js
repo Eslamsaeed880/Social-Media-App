@@ -19,17 +19,13 @@ const likeSchema = new Schema({
     }
 }, { timestamps: true });
 
-likeSchema.pre('save', async function(next) {
+likeSchema.pre('save', function() {
     if(!this.videoId && !this.commentId) {
-        const err = new Error('Either video or comment must be provided');
-        return next(err);
+        throw new Error('Either video or comment must be provided');
     }
     if(this.videoId && this.commentId) {
-        const err = new Error('Only one of video or comment can be liked at a time');
-        return next(err);
+        throw new Error('Only one of video or comment can be liked at a time');
     }
-    
-    next();
 });
 
 likeSchema.index({ likedBy: 1, videoId: 1 }, { unique: true, sparse: true });
