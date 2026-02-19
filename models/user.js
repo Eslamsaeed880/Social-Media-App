@@ -21,6 +21,10 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    numberOfSubscribers: {
+        type: Number,
+        default: 0
+    },
     profilePicture: {
         publicId: String,
         url: String
