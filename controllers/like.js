@@ -124,3 +124,37 @@ export const likeComment = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+export const unlikeComment = async (req, res, next) => {
+    try {
+        const { commentId } = req.body;
+        const { user } = req;
+
+        if (!commentId) {
+            return next(new APIError(400, 'Comment ID is required'));
+        }
+
+        const comment = await Comment.findById(commentId);
+
+        if (!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+        
+        const existingLike = await Like.findOne({ likedBy: user.id, commentId });
+
+        if (!existingLike) {
+            return next(new APIError(400, 'You have not liked this comment'));
+        }
+
+        await existingLike.deleteOne();
+        comment.likes--;
+
+        await comment.save();
+
+        return res.status(200).json(new APIResponse(200, 'Comment unliked successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
