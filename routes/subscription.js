@@ -1,8 +1,10 @@
 import express from 'express';
-import { subscribeToChannel, unsubscribeFromChannel, toggleNotifications } from '../controllers/subscription.js';
+import { subscribeToChannel, unsubscribeFromChannel, toggleNotifications, getUserSubscriptions } from '../controllers/subscription.js';
 import isAuth from '../middlewares/isAuth.js';
 
 const router = express.Router();
+
+router.get("/", isAuth, getUserSubscriptions)
 
 router.post("/", isAuth, subscribeToChannel);
 

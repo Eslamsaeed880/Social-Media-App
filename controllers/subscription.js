@@ -111,3 +111,35 @@ export const toggleNotifications = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get all subscriptions of a user
+// Route: GET /api/v1/subscriptions
+// Access: Private
+export const getUserSubscriptions = async (req, res, next) => {
+    try {
+        const { user } = req;
+        const { page = 1, limit = 10 } = req.query;
+
+        const skip = (+page - 1) * +limit;
+
+        const [subscriptions, totalSubscriptions] = await Promise.all([
+            Subscription.find({ subscriberId: user.id })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(+limit)
+                .populate('channelId', 'username profilePicture'),
+            Subscription.countDocuments({ subscriberId: user.id })
+        ]);
+
+        return res.status(200).json(new APIResponse(200, 'User subscriptions retrieved successfully', {
+            subscriptions,
+            totalSubscriptions,
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalSubscriptions / +limit),
+        }));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
