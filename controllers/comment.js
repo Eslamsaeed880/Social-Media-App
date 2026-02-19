@@ -59,7 +59,6 @@ export const replyToComment = async (req, res, next) => {
 
         const comment = new Comment({
             content,
-            videoId: parentComment.videoId,
             createdBy: req.user.id,
             parentComment: parentComment._id,
         });
@@ -111,6 +110,9 @@ export const updateComment = async (req, res, next) => {
     }
 }
 
+// @Desc: Delete a comment
+// @Route: DELETE /api/v1/comments/69907f5c2aaf6241eff371fc
+// @Access: Private
 export const deleteComment = async (req, res, next) => {
     try {
         const { commentId } = req.params;
@@ -206,6 +208,79 @@ export const getReplies = async (req, res, next) => {
                 'Comment replies fetched successfully'
             )
         );
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+
+// @Desc: Get comments of a video
+// @Route: GET /api/v1/comments/video/698fa551362e5de95b8a691c
+// @Access: Public
+export const getCommentsOfVideo = async (req, res, next) => {
+    try { 
+        const { videoId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+        if (!videoId) {
+            return next(new APIError(400, "Video ID is required"));
+        }
+        const comments = await Comment.aggregate([
+            {
+                $match: {
+                    videoId: new mongoose.Types.ObjectId(videoId),
+                },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "createdBy",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [
+                        {
+                            $project: {
+                                username: 1,
+                                fullName: 1,
+                                avatar: 1,
+                            },
+                        },
+                    ],
+                },
+            },
+            {
+                $addFields: {
+                    owner: { $first: "$owner" },
+                    repliesCount: { $size: "$replies" },
+                },
+            },
+            {
+                $sort: { createdAt: -1 },
+            },
+            {
+                $skip: (parseInt(page) - 1) * parseInt(limit),
+            },
+            {
+                $limit: parseInt(limit),
+            },
+        ]);
+        // Get total comments count
+        const totalComments = await Comment.countDocuments({
+            videoId: new mongoose.Types.ObjectId(videoId),
+        });
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                "Comments fetched successfully",
+                {
+                    comments,
+                    totalComments,
+                    currentPage: parseInt(page),
+                    totalPages: Math.ceil(totalComments / parseInt(limit)),
+                }
+            )
+        );
+
     } catch (error) {
         console.log(error);
         return next(new APIError(500, 'Server error'));

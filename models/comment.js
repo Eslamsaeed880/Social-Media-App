@@ -10,8 +10,7 @@ const commentSchema = new Schema({
     },
     videoId: {
         type: Schema.Types.ObjectId,
-        ref: 'Video',
-        required: true
+        ref: 'Video'
     },
     createdBy: {
         type: Schema.Types.ObjectId,
@@ -24,7 +23,8 @@ const commentSchema = new Schema({
     },
     replies: [{
         type: Schema.Types.ObjectId,
-        ref: 'Comment'
+        ref: 'Comment',
+        cascade: true
     }]
 }, { timestamps: true });
 

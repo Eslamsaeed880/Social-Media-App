@@ -4,12 +4,14 @@ import {
     replyToComment,
     updateComment,
     deleteComment,
-    getReplies
+    getReplies,
+    getCommentsOfVideo
 } from '../controllers/comment.js';
 import isAuth from '../middlewares/isAuth.js';
 
 const router = express.Router();
 
+router.get("/video/:videoId", getCommentsOfVideo)
 
 router.post("/:videoId", isAuth, createComment);
 
