@@ -51,6 +51,9 @@ export const subscribeToChannel = async (req, res, next) => {
     }
 }
 
+// @Desc: Unsubscribe from a channel
+// Route: DELETE /api/v1/subscriptions
+// Access: Private
 export const unsubscribeFromChannel = async (req, res, next) => {
     try {
         const { channelId } = req.body;
@@ -73,6 +76,35 @@ export const unsubscribeFromChannel = async (req, res, next) => {
         await channel.save();
 
         return res.status(200).json(new APIResponse(200, 'Successfully unsubscribed from channel'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Toggle notifications for a channel
+// Route: PATCH /api/v1/subscriptions/notifications
+// Access: Private
+export const toggleNotifications = async (req, res, next) => {
+    try {
+        const { channelId } = req.body;
+        const { user } = req;
+        
+        if (!channelId) {
+            return next(new APIError(400, 'Channel ID is required'));
+        }
+
+        const subscription = await Subscription.findOne({ subscriberId: user.id, channelId });
+
+        if (!subscription) {
+            return next(new APIError(404, 'Subscription not found'));
+        }
+
+        subscription.notificationsEnabled = !subscription.notificationsEnabled;
+        await subscription.save();
+
+        return res.status(200).json(new APIResponse(200, 'Notifications toggled successfully', subscription));
 
     } catch (error) {
         console.log(error);
