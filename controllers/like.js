@@ -125,6 +125,9 @@ export const likeComment = async (req, res, next) => {
     }
 }
 
+// @Desc: Unlike a comment
+// Route: delete /api/v1/likes/comment
+// Access: Private
 export const unlikeComment = async (req, res, next) => {
     try {
         const { commentId } = req.body;
