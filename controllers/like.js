@@ -82,3 +82,45 @@ export const unlikeVideo = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Like a comment
+// Route: POST /api/v1/likes/comment
+// Access: Private
+export const likeComment = async (req, res, next) => {
+    try {
+        const { commentId } = req.body;
+        const { user } = req;
+
+        if (!commentId) {
+            return next(new APIError(400, 'Comment ID is required'));
+        }
+
+        const comment = await Comment.findById(commentId);
+
+        if (!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+
+        const existingLike = await Like.findOne({ likedBy: user.id, commentId });
+
+        if (existingLike) {
+            return next(new APIError(400, 'You have already liked this comment'));
+        }
+
+        const like = new Like({
+            likedBy: user.id,
+            commentId
+        });
+        
+        comment.likes++;
+
+        await like.save();
+        await comment.save();
+
+        return res.status(201).json(new APIResponse(201, 'Comment liked successfully', like));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
