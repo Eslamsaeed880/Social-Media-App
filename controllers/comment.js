@@ -3,6 +3,8 @@ import APIResponse from "../utils/APIResponse.js";
 import Comment from "../models/comment.js";
 import Video from "../models/video.js";
 import mongoose from "mongoose"
+import createNotification from "../utils/createNotification.js";
+import User from "../models/user.js";
 
 // @Desc: Create a comment on a video
 // @Route: POST /api/v1/comments/698fa551362e5de95b8a691c
@@ -26,8 +28,10 @@ export const createComment = async (req, res, next) => {
         
         video.comments++;
 
+        const userCommenter = await User.findById(req.user.id);
         await comment.save();
         await video.save();
+        await createNotification(video.publisherId, req.user.id, 'comment', `${userCommenter.username} commented on your video "${video.title}"`, 'video', video._id);
 
         return res.status(201).json(new APIResponse(201, 'Comment created successfully', comment));
         
@@ -67,9 +71,11 @@ export const replyToComment = async (req, res, next) => {
 
         video.comments++;
 
+        const userReplier = await User.findById(req.user.id);
         await comment.save();
         await parentComment.save();
         await video.save();
+        await createNotification(parentComment.createdBy, req.user.id, 'reply', `${userReplier.username} replied "${comment.content}" to your comment "${parentComment.content}"`, 'comment', parentComment._id);
 
         return res.status(201).json(new APIResponse(201, 'Reply created successfully', comment));
 
