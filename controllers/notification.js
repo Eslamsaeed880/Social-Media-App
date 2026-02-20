@@ -17,7 +17,7 @@ export const getNotifications = async (req, res, next) => {
         };
 
         if (unreadOnly === "true") {
-            matchStage.read = false;
+            matchStage.isRead = false;
         }
 
         const notifications = await Notification.aggregate([
@@ -26,7 +26,7 @@ export const getNotifications = async (req, res, next) => {
             },
             {
                 $lookup: {
-                    from: "Users",
+                    from: "users",
                     localField: "sender",
                     foreignField: "_id",
                     as: "sender",
@@ -68,15 +68,15 @@ export const getNotifications = async (req, res, next) => {
 
         return res.status(200).json(
             new APIResponse(
-            200,
-            {
-                notifications,
-                unreadCount,
-                totalCount,
-                currentPage: Number(page),
-                totalPages: Math.ceil(totalCount / Number(limit)),
-            },
-            "Notifications fetched successfully"
+                200,
+                {
+                    notifications,
+                    unreadCount,
+                    totalCount,
+                    currentPage: Number(page),
+                    totalPages: Math.ceil(totalCount / Number(limit)),
+                },
+                "Notifications fetched successfully"
             )
         );
 

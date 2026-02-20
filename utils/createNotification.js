@@ -1,8 +1,12 @@
 import User from '../models/user.js';
 import Notification from '../models/notification.js';
 
-const createNotification = async (recipientId, senderId, type, content) => {
+const createNotification = async (recipientId, senderId, type, content, entityType = null, entityId = null) => {
     try {
+
+        if (recipientId.toString() === senderId.toString()) {
+            return null;
+        }
 
         const recipient = await User.findById(recipientId);
 
@@ -11,11 +15,13 @@ const createNotification = async (recipientId, senderId, type, content) => {
             return null;
         }
          
-        const notification = Notification.create({
+        const notification = await Notification.create({
             recipient: recipientId,
             sender: senderId,
             type,
-            content
+            content,
+            entityType,
+            entityId
         });
 
         return notification;

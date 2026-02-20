@@ -17,6 +17,15 @@ const notificationSchema = new Schema({
         enum: ['like', 'comment', 'subscribe', 'video', 'reply'],
         required: true
     },
+    entityType: {
+        type: String,
+        enum: ['video', 'comment'],
+        required: false
+    },
+    entityId: {
+        type: Schema.Types.ObjectId,
+        required: false
+    },
     content: {
         type: String,
         required: false
