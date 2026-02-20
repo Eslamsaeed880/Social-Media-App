@@ -1,6 +1,7 @@
 import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import Subscription from "../models/subscription.js";
+import createNotification from "../utils/createNotification.js";
 import User from "../models/user.js";
 
 // @Desc: Subscribe to a channel
@@ -41,8 +42,10 @@ export const subscribeToChannel = async (req, res, next) => {
 
         channel.numberOfSubscribers++;
 
+        const userSubscriber = await User.findById(user.id);
         await channel.save();
         await subscription.save();
+        await createNotification(channelId, user.id, 'subscribe', `${userSubscriber.username} subscribed to your channel`, null, channel._id);
 
         return res.status(201).json(new APIResponse(201, 'Successfully subscribed to channel', subscription));
     } catch (error) {
