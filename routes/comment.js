@@ -5,11 +5,14 @@ import {
     updateComment,
     deleteComment,
     getReplies,
-    getCommentsOfVideo
+    getCommentsOfVideo,
+    getCommentById
 } from '../controllers/comment.js';
 import isAuth from '../middlewares/isAuth.js';
 
 const router = express.Router();
+
+router.get("/:commentId", getCommentById);
 
 router.get("/video/:videoId", getCommentsOfVideo)
 

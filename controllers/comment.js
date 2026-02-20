@@ -292,3 +292,25 @@ export const getCommentsOfVideo = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+export const getCommentById = async (req, res, next) => {
+    try {
+        const { commentId } = req.params;
+
+        if (!commentId) {
+            return next(new APIError(400, 'Comment ID is required'));
+        }
+
+        const comment = await Comment.findById(commentId).populate('createdBy', 'username fullName avatar');
+
+        if (!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+
+        return res.status(200).json(new APIResponse(200, 'Comment retrieved successfully', comment));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
