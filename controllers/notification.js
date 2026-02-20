@@ -133,3 +133,32 @@ export const markAsRead = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Delete a notification
+// Route: DELETE /api/v1/notifications/:notificationId
+// Access: Private
+export const deleteNotification = async (req, res, next) => {
+    try {
+        const { notificationId } = req.params;
+        const { user } = req;
+
+        if (!notificationId) {
+            return next(new APIError(400, 'Notification ID is required'));
+        }
+
+        const notification = await Notification.findOne({ _id: notificationId, recipient: user.id });
+
+        if (!notification) {
+            return next(new APIError(404, 'Notification not found'));
+        }
+
+        await notification.deleteOne();
+
+        return res.status(200).json(new APIResponse(200, {}, 'Notification deleted successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
