@@ -59,7 +59,7 @@ export const getNotifications = async (req, res, next) => {
     
         const unreadCount = await Notification.countDocuments({
             recipient: user.id,
-            read: false,
+            isRead: false,
         });
 
         const totalCount = await Notification.countDocuments({
@@ -86,3 +86,21 @@ export const getNotifications = async (req, res, next) => {
     }
 }   
 
+// @Desc: Mark a notification as read
+// Route: PATCH /api/v1/notifications/:id/read
+// Access: Private
+export const markAllAsRead = async (req, res, next) => {
+    try {
+        const { user } = req;
+        
+        const notifications = await Notification.updateMany(
+            { recipient: user.id, isRead: false },
+            { $set: { isRead: true } }
+        )
+
+        return res.status(200).json(new APIResponse(200, notifications, 'All notifications marked as read'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
