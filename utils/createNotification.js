@@ -1,3 +1,6 @@
+import User from '../models/user.js';
+import Notification from '../models/notification.js';
+
 const createNotification = async (recipientId, senderId, type, content) => {
     try {
 
@@ -8,14 +11,12 @@ const createNotification = async (recipientId, senderId, type, content) => {
             return null;
         }
          
-        const notification = new Notification({
+        const notification = Notification.create({
             recipient: recipientId,
             sender: senderId,
             type,
             content
         });
-
-        await notification.save();
 
         return notification;
 

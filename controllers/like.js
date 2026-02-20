@@ -3,6 +3,7 @@ import APIResponse from '../utils/APIResponse.js';
 import Comment from '../models/comment.js';
 import Like from '../models/like.js';
 import Video from '../models/video.js';
+import createNotification from '../utils/createNotification.js';
 
 // @Desc: Like a video or comment
 // Route: POST /api/v1/likes
@@ -34,9 +35,9 @@ export const likeVideo = async (req, res, next) => {
         });
         
         video.likes++;
-
         await like.save();
         await video.save();
+        await createNotification(video.publisherId, user.id, 'like', `liked your video "${video.title}"`);
 
         return res.status(201).json(new APIResponse(201, 'Video liked successfully', like));
 
@@ -116,6 +117,7 @@ export const likeComment = async (req, res, next) => {
 
         await like.save();
         await comment.save();
+        await createNotification(comment.createdBy, user.id, 'like', `liked your comment "${comment.content}"`);
 
         return res.status(201).json(new APIResponse(201, 'Comment liked successfully', like));
 

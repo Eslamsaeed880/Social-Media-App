@@ -28,6 +28,7 @@ export const postVideo = async (req, res, next) => {
             
             if(!cat) {
                 VideoCategory.create({ name: category });
+                cat = await VideoCategory.findOne({ name: { $regex: category, $options: "i" } });
             }
         }
 
