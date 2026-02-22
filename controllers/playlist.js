@@ -31,7 +31,7 @@ export const createPlaylist = async (req, res, next) => {
 }
 
 // @Desc: Get all playlists of a user
-// @Route: GET /api/v1/playlists/:userId
+// @Route: GET /api/v1/playlists/:userId/user
 // @Access: Private
 export const getUserPlaylists = async (req, res, next) => {
     try {
@@ -45,6 +45,42 @@ export const getUserPlaylists = async (req, res, next) => {
         }
 
         return res.status(200).json(new APIResponse(200, playlists, 'Playlists fetched successfully'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// Desc: Add a video to a playlist
+// Route: POST /api/v1/playlists/:playlistId/video
+// Access: Private
+export const addVideoToPlaylist = async (req, res, next) => {
+    try {
+        const { playlistId } = req.params;
+        const { videoId } = req.body;
+
+        const playlist = await Playlist.findById(playlistId);
+        if (!playlist) {
+            return next(new APIError(404, 'Playlist not found'));
+        }
+
+        if (playlist.createdBy.toString() !== req.user.id) {
+            return next(new APIError(403, 'Unauthorized'));
+        }
+
+        const video = await Video.findById(videoId);
+        if (!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        if (playlist.videos.includes(videoId)) {
+            return next(new APIError(400, 'Video already in playlist'));
+        }
+
+        playlist.videos.push(videoId);
+        await playlist.save();
+
+        return res.status(200).json(new APIResponse(200, playlist, 'Video added to playlist successfully'));
     } catch (error) {
         console.log(error);
         return next(new APIError(500, 'Server error'));
