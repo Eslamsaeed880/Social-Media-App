@@ -36,3 +36,18 @@ export const addToWatchLater = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get the user's watch later list
+// @Route: GET /api/v1/watch-later
+// @Access: Private
+export const getWatchLaterList = async (req, res, next) => {
+    try {
+        const watchLaterList = await WatchLater.find({ userId: req.user.id }).populate('videoId');
+
+        return res.status(200).json(new APIResponse(200, 'Watch later list retrieved successfully', watchLaterList));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}

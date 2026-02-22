@@ -8,11 +8,11 @@ const watchLaterSchema = new Schema({
         required: true,
         unique: true
     },
-    videos: [{
+    videoId: {
         type: Schema.Types.ObjectId,
         ref: 'Video',
         required: true
-    }]
+    }
 }, { timestamps: true });
 
 const WatchLater = mongoose.model('WatchLater', watchLaterSchema);
