@@ -1,10 +1,19 @@
 import express from "express";
-import { createPlaylist, getUserPlaylists, addVideoToPlaylist, getPlaylistVideos, removeVideoFromPlaylist } from "../controllers/playlist.js";
+import { 
+    createPlaylist, 
+    getUserPlaylists, 
+    addVideoToPlaylist, 
+    getPlaylistVideos, 
+    removeVideoFromPlaylist, 
+    deletePlaylist 
+} from "../controllers/playlist.js";
 import isAuth, {isLoggedIn} from "../middlewares/isAuth.js";
 
 const router = express.Router();
 
 router.post("/", isAuth, createPlaylist);
+
+router.delete("/:playlistId", isAuth, deletePlaylist);
 
 router.get("/:userId/user", isLoggedIn, getUserPlaylists);
 

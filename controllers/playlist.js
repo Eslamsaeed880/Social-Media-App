@@ -168,3 +168,28 @@ export const removeVideoFromPlaylist = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Delete a playlist
+// @Route: DELETE /api/v1/playlists/:playlistId
+// @Access: Private
+export const deletePlaylist = async (req, res, next) => {
+    try {
+        const { playlistId } = req.params;
+        const playlist = await Playlist.findById(playlistId);
+
+        if (!playlist) {
+            return next(new APIError(404, 'Playlist not found'));
+        }
+
+        if (playlist.createdBy.toString() !== req.user.id) {
+            return next(new APIError(403, 'Unauthorized'));
+        }
+
+        await playlist.deleteOne();
+
+        return res.status(200).json(new APIResponse(200, {}, 'Playlist deleted successfully'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
