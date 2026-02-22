@@ -161,7 +161,7 @@ export const removeVideoFromPlaylist = async (req, res, next) => {
         
         playlist.videos = playlist.videos.filter(id => id.toString() !== videoId);
         await playlist.save();
-        
+
         return res.status(200).json(new APIResponse(200, playlist, 'Video removed from playlist successfully'));
     } catch (error) {
         console.log(error);
@@ -188,6 +188,39 @@ export const deletePlaylist = async (req, res, next) => {
         await playlist.deleteOne();
 
         return res.status(200).json(new APIResponse(200, {}, 'Playlist deleted successfully'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Update Playlist details (name, description, isPublic, tags)
+// @Route: PUT /api/v1/playlists/:playlistId
+// @Access: Private
+export const updatePlaylist = async (req, res, next) => {
+    try {
+        const { playlistId } = req.params;
+
+        const playlist = await Playlist.findById(playlistId);
+        if (!playlist) {
+            return next(new APIError(404, 'Playlist not found'));
+        }
+
+        if (playlist.createdBy.toString() !== req.user.id) {
+            return next(new APIError(403, 'Unauthorized'));
+        }
+
+        const dataToUpdate = ["name", "description", "isPublic", "tags"];
+
+        dataToUpdate.forEach(field => {
+            if (req.body[field] !== undefined && req.body[field] !== null) {
+                playlist[field] = req.body[field];
+            }
+        });
+
+        await playlist.save();
+
+        return res.status(200).json(new APIResponse(200, playlist, 'Playlist updated successfully'));
     } catch (error) {
         console.log(error);
         return next(new APIError(500, 'Server error'));

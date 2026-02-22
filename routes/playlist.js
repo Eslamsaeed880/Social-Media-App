@@ -5,7 +5,8 @@ import {
     addVideoToPlaylist, 
     getPlaylistVideos, 
     removeVideoFromPlaylist, 
-    deletePlaylist 
+    deletePlaylist,
+    updatePlaylist
 } from "../controllers/playlist.js";
 import isAuth, {isLoggedIn} from "../middlewares/isAuth.js";
 
@@ -14,6 +15,8 @@ const router = express.Router();
 router.post("/", isAuth, createPlaylist);
 
 router.delete("/:playlistId", isAuth, deletePlaylist);
+
+router.put("/:playlistId", isAuth, updatePlaylist);
 
 router.get("/:userId/user", isLoggedIn, getUserPlaylists);
 
