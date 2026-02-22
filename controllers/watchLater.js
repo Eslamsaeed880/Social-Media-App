@@ -10,7 +10,7 @@ export const addToWatchLater = async (req, res, next) => {
     try {
         const { videoId } = req.body;
 
-        const video = await Video.findById(videoId);
+        const video = await Video.findById(videoId).where({ isPublished: true });
 
         if (!video) {
             return next(new APIError(404, 'Video not found'));
@@ -29,7 +29,7 @@ export const addToWatchLater = async (req, res, next) => {
 
         await watchLaterEntry.save();
 
-        return res.status(201).json(new APIResponse(201, 'Video added to watch later list', watchLaterEntry));
+        return res.status(201).json(new APIResponse(201, watchLaterEntry, 'Video added to watch later list'));
 
     } catch (error) {
         console.log(error);
@@ -44,7 +44,7 @@ export const getWatchLaterList = async (req, res, next) => {
     try {
         const watchLaterList = await WatchLater.find({ userId: req.user.id }).populate('videoId');
 
-        return res.status(200).json(new APIResponse(200, 'Watch later list retrieved successfully', watchLaterList));
+        return res.status(200).json(new APIResponse(200, watchLaterList, "Watch later list retrieved successfully"));
 
     } catch (error) {
         console.log(error);
