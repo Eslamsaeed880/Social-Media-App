@@ -51,3 +51,24 @@ export const getWatchLaterList = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Remove a video from the user's watch later list
+// @Route: DELETE /api/v1/watch-later/:videoId
+// @Access: Private
+export const removeFromWatchLater = async (req, res, next) => {
+    try {
+        const { videoId } = req.params;
+        const watchLaterEntry = await WatchLater.findOne({ userId: req.user.id, videoId });
+
+        if (!watchLaterEntry) {
+            return next(new APIError(404, 'Video not found in watch later list'));
+        }
+
+        await WatchLater.deleteOne({ _id: watchLaterEntry._id });
+
+        return res.status(200).json(new APIResponse(200, {}, 'Video removed from watch later list'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
