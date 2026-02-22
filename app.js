@@ -8,6 +8,7 @@ import likeRouter from './routes/like.js';
 import subscriptionRouter from './routes/subscription.js';
 import notificationRouter from './routes/notification.js';
 import watchLaterRouter from './routes/watchLater.js';
+import playlistRouter from './routes/playlist.js';
 import { errorHandler, notFound } from './middlewares/error.js';
 import passport, { configurePassport } from './middlewares/googleAuth.js';
 
@@ -27,6 +28,7 @@ app.use('/api/v1/likes', likeRouter);
 app.use('/api/v1/subscriptions', subscriptionRouter);
 app.use('/api/v1/notifications', notificationRouter);
 app.use('/api/v1/watch-later', watchLaterRouter);
+app.use('/api/v1/playlists', playlistRouter);
 
 // Error handling middlewares
 app.use(notFound);
