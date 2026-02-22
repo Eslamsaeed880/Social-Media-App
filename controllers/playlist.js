@@ -29,3 +29,24 @@ export const createPlaylist = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get all playlists of a user
+// @Route: GET /api/v1/playlists/:userId
+// @Access: Private
+export const getUserPlaylists = async (req, res, next) => {
+    try {
+        const userId = req.params.userId;
+        
+        let playlists;
+        if(userId === req.user.id) {
+            playlists = await Playlist.find({ createdBy: userId });
+        } else {
+            playlists = await Playlist.find({ createdBy: userId, isPublic: true });
+        }
+
+        return res.status(200).json(new APIResponse(200, playlists, 'Playlists fetched successfully'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
