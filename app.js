@@ -14,6 +14,7 @@ import watchLaterRouter from './routes/watchLater.js';
 import playlistRouter from './routes/playlist.js';
 import reportRouter from './routes/report.js';
 import adminRouter from './routes/admin.js';
+import watchHistoryRouter from './routes/watchHistory.js';
 import channelRouter from './routes/channel.js';
 import { errorHandler, notFound } from './middlewares/error.js';
 import passport, { configurePassport } from './middlewares/googleAuth.js';
@@ -25,6 +26,7 @@ connectDb();
 configurePassport();
 
 // Routes
+app.use(compression());
 app.use(helmet());
 app.use(express.json());
 app.use('/api', apiLimiter);
@@ -40,6 +42,8 @@ app.use('/api/v1/playlists', playlistRouter);
 app.use('/api/v1/reports', reportRouter);
 app.use('/api/v1/admin', adminRouter);
 app.use('/api/v1/channels', channelRouter);
+app.use('/api/v1/watch-history', watchHistoryRouter);
+
 // Error handling middlewares
 app.use(notFound);
 app.use(errorHandler);

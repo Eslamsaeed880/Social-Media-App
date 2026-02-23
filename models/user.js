@@ -50,10 +50,6 @@ const userSchema = new Schema({
         facebook: String,
         website: String
     },
-    watchedVideos: [    {
-        type: Schema.Types.ObjectId,
-        ref: 'Video'
-    }],
     isVerified: {
         type: Boolean,
         default: false

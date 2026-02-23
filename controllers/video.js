@@ -5,6 +5,8 @@ import Video from "../models/video.js";
 import User from "../models/user.js";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
 import VideoCategory from "../models/videoCategory.js";
+import WatchHistory from "../models/watchHistory.js";
+import { addToWatchHistory } from "../utils/addToWatchHistory.js";
 import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import crypto from 'crypto';
 
@@ -220,17 +222,7 @@ export const getVideoById = async (req, res, next) => {
         }
 
         if(req.user) {
-            const user = await User.findById(req.user.id);
-
-            if(user.watchedVideos.some(v => v.toString() === video._id.toString())) {
-                await User.findByIdAndUpdate(req.user.id, {
-                    $pull: { watchedVideos: video._id }
-                });
-            } else {
-                await User.findByIdAndUpdate(req.user.id, {
-                    $push: { watchedVideos: video._id }
-                });
-            }
+            await addToWatchHistory(req.user.id, video._id);
         }
 
         video.views += 1;
