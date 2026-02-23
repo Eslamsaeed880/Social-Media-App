@@ -75,7 +75,10 @@ const channelAnalyticsSchema = new Schema({
     ]
 }, {timestamps: true});
 
-channelAnalyticsSchema.index({channelId: 1});
+channelAnalyticsSchema.index({channelId: 1}); 
+channelAnalyticsSchema.index({totalViews: -1});
+channelAnalyticsSchema.index({totalSubscribers: -1}); 
+channelAnalyticsSchema.index({'dailyStats.date': 1}); 
 
 const ChannelAnalytics = mongoose.model('ChannelAnalytics', channelAnalyticsSchema);
 

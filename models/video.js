@@ -82,6 +82,11 @@ const videoSchema = new Schema({
 videoSchema.plugin(mongooseAggregatePaginate);
 
 videoSchema.index({title: 'text', description: 'text', tags: 'text'});
+videoSchema.index({publisherId: 1});
+videoSchema.index({category: 1}); 
+videoSchema.index({createdAt: -1});
+videoSchema.index({isPublished: 1});
+videoSchema.index({publisherId: 1, createdAt: -1});
 
 const videoModel = mongoose.model('Video', videoSchema);
 

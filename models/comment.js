@@ -28,6 +28,11 @@ const commentSchema = new Schema({
     }]
 }, { timestamps: true });
 
+commentSchema.index({videoId: 1}); 
+commentSchema.index({createdBy: 1});
+commentSchema.index({parentComment: 1}); 
+commentSchema.index({videoId: 1, createdAt: -1});
+
 const Comment = mongoose.model('Comment', commentSchema);
 
 export default Comment;

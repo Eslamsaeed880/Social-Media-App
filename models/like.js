@@ -29,6 +29,10 @@ likeSchema.pre('save', function() {
 });
 
 likeSchema.index({ likedBy: 1, videoId: 1 }, { unique: true, sparse: true });
+likeSchema.index({ likedBy: 1, commentId: 1 }, { unique: true, sparse: true });
+likeSchema.index({videoId: 1});
+likeSchema.index({commentId: 1});
+likeSchema.index({likedBy: 1}); 
 
 const Like = mongoose.model('Like', likeSchema);
 

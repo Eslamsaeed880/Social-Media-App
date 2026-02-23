@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import connectDb from './config/mongodb.js';
 import apiLimiter from './utils/apiLimiter.js';
+import compression from 'compression';
 import userRouter from './routes/user.js';
 import videoRouter from './routes/video.js';
 import commentRouter from './routes/comment.js';

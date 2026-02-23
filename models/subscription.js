@@ -19,6 +19,10 @@ const subscriptionSchema = new Schema({
 }, { timestamps: true });
 
 subscriptionSchema.index({ subscriberId: 1, channelId: 1 }, { unique: true });
+subscriptionSchema.index({subscriberId: 1}); 
+subscriptionSchema.index({channelId: 1}); 
+subscriptionSchema.index({subscriberId: 1, createdAt: -1});
+subscriptionSchema.index({channelId: 1, createdAt: -1}); 
 
 const Subscription = mongoose.model('Subscription', subscriptionSchema);
 
