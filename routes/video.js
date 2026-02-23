@@ -7,6 +7,7 @@ import {
     updateVideo,
     deleteVideo,
     getMyVideos,
+    getRecommendedVideos,
 } from '../controllers/video.js';
 import isAuth, { isLoggedIn } from '../middlewares/isAuth.js';
 import { upload } from '../middlewares/multer.js';
@@ -21,6 +22,8 @@ router.post("/", isAuth, upload.fields([
 ]), postVideo);
 
 router.get("/my-videos", isAuth, getMyVideos);
+
+router.get("/recommendations", isAuth, getRecommendedVideos);
 
 router.get("/:id", isLoggedIn, getVideoById);
 
