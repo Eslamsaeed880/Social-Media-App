@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import express from 'express';
+import helmet from 'helmet';
 import connectDb from './config/mongodb.js';
+import apiLimiter from './utils/apiLimiter.js';
 import userRouter from './routes/user.js';
 import videoRouter from './routes/video.js';
 import commentRouter from './routes/comment.js';
@@ -21,7 +23,9 @@ connectDb();
 configurePassport();
 
 // Routes
+app.use(helmet());
 app.use(express.json());
+app.use('/api', apiLimiter);
 app.use(passport.initialize());
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/videos', videoRouter);

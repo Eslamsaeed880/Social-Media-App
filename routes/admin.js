@@ -13,20 +13,22 @@ import isAdmin from '../middlewares/isAdmin.js';
 
 const router = express.Router();
 
-router.get('/reports', isAdmin, getAllReports);
+router.use(isAdmin);
 
-router.get('/reports/:reportId', isAdmin, getReportById); 
+router.get('/reports', getAllReports);
 
-router.put('/reports/:reportId', isAdmin, updateReportStatus);
+router.get('/reports/:reportId', getReportById); 
 
-router.get('/users', isAdmin, getAllUsers);
+router.put('/reports/:reportId', updateReportStatus);
 
-router.get('/users/:userId', isAdmin, getUserById);
+router.get('/users', getAllUsers);
 
-router.delete('/users/:userId', isAdmin, deleteUser);
+router.get('/users/:userId', getUserById);
 
-router.get('/users/:userId/videos', isAdmin, getVideosByUserId);
+router.delete('/users/:userId', deleteUser);
 
-router.get('/users/:userId/comments', isAdmin, getCommentsByUserId);
+router.get('/users/:userId/videos', getVideosByUserId);
+
+router.get('/users/:userId/comments', getCommentsByUserId);
 
 export default router;
