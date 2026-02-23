@@ -185,3 +185,30 @@ export const getUserById = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Delete a user (admin only)
+// @Route: DELETE /api/v1/admin/users/:userId
+// @Access: Private (admin)
+export const deleteUser = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+
+        if (req.user.role !== 'admin') {
+            return next(new APIError(403, 'Access denied'));
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return next(new APIError(404, 'User not found'));
+        }
+
+        await user.deleteOne();
+
+        return res.status(200).json(new APIResponse(200, {}, 'User deleted successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}

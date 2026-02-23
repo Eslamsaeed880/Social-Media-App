@@ -5,6 +5,7 @@ import {
     getReportById,
     getAllUsers,
     getUserById,
+    deleteUser,
 } from '../controllers/admin.js';
 import isAdmin from '../middlewares/isAdmin.js';
 
@@ -19,5 +20,7 @@ router.put('/reports/:reportId', isAdmin, updateReportStatus);
 router.get('/users', isAdmin, getAllUsers);
 
 router.get('/users/:userId', isAdmin, getUserById);
+
+router.delete('/users/:userId', isAdmin, deleteUser);
 
 export default router;
