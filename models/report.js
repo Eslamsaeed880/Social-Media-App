@@ -10,7 +10,7 @@ const reportSchema = new Schema({
     },
     reportedUser: {
         type: Schema.Types.ObjectId,
-        ref: 'User'
+        ref: 'User' 
     },
     reason: {
         type: String,
