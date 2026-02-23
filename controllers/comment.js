@@ -5,6 +5,8 @@ import Video from "../models/video.js";
 import mongoose from "mongoose"
 import createNotification from "../utils/createNotification.js";
 import User from "../models/user.js";
+import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
+import crypto from 'crypto';
 
 // @Desc: Create a comment on a video
 // @Route: POST /api/v1/comments/698fa551362e5de95b8a691c
@@ -32,6 +34,17 @@ export const createComment = async (req, res, next) => {
         await comment.save();
         await video.save();
         await createNotification(video.publisherId, req.user.id, 'comment', `${userCommenter.username} commented on your video "${video.title}"`, 'video', video._id);
+
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'COMMENT_ADDED',
+                channelId: video.publisherId,
+                videoId: video._id,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
 
         return res.status(201).json(new APIResponse(201, 'Comment created successfully', comment));
         
@@ -76,6 +89,17 @@ export const replyToComment = async (req, res, next) => {
         await parentComment.save();
         await video.save();
         await createNotification(parentComment.createdBy, req.user.id, 'reply', `${userReplier.username} replied "${comment.content}" to your comment "${parentComment.content}"`, 'comment', parentComment._id);
+
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'COMMENT_ADDED',
+                channelId: video.publisherId,
+                videoId: video._id,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
 
         return res.status(201).json(new APIResponse(201, 'Reply created successfully', comment));
 
@@ -133,7 +157,25 @@ export const deleteComment = async (req, res, next) => {
             return next(new APIError(403, 'You are not authorized to delete this comment'));
         }
 
+        let channelId = null;
+        if (comment.videoId) {
+            const video = await Video.findById(comment.videoId).select('publisherId');
+            channelId = video?.publisherId || null;
+        }
+
         await comment.deleteOne();
+
+        if (channelId) {
+            try {
+                await enqueueAnalyticsEvent({
+                    eventId: crypto.randomUUID(),
+                    type: 'COMMENT_REMOVED',
+                    channelId,
+                });
+            } catch (analyticsError) {
+                console.error('Analytics event failed:', analyticsError);
+            }
+        }
         
         return res.status(200).json(new APIResponse(200, 'Comment deleted successfully'));
 

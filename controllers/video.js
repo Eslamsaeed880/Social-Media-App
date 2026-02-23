@@ -5,6 +5,8 @@ import Video from "../models/video.js";
 import User from "../models/user.js";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
 import VideoCategory from "../models/videoCategory.js";
+import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
+import crypto from 'crypto';
 
 // @Desc: Upload a new video
 // @route POST /api/v1/videos
@@ -233,6 +235,19 @@ export const getVideoById = async (req, res, next) => {
 
         video.views += 1;
         await video.save();
+
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'VIDEO_VIEWED',
+                channelId: video.publisherId._id,
+                videoId: video._id,
+                watchTimeMinutes: Number(video.duration) || 0,
+                viewerGender: req.user?.gender || null,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
 
         return res.status(200).json(
             new APIResponse(

@@ -3,6 +3,8 @@ import APIResponse from "../utils/APIResponse.js";
 import Subscription from "../models/subscription.js";
 import createNotification from "../utils/createNotification.js";
 import User from "../models/user.js";
+import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
+import crypto from 'crypto';
 
 // @Desc: Subscribe to a channel
 // Route: POST /api/v1/subscriptions
@@ -47,6 +49,16 @@ export const subscribeToChannel = async (req, res, next) => {
         await subscription.save();
         await createNotification(channelId, user.id, 'subscribe', `${userSubscriber.username} subscribed to your channel`, null, channel._id);
 
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'SUBSCRIBER_ADDED',
+                channelId,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
+
         return res.status(201).json(new APIResponse(201, 'Successfully subscribed to channel', subscription));
     } catch (error) {
         console.log(error);
@@ -77,6 +89,16 @@ export const unsubscribeFromChannel = async (req, res, next) => {
         const channel = await User.findById(channelId);
         channel.numberOfSubscribers--;
         await channel.save();
+
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'SUBSCRIBER_REMOVED',
+                channelId,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
 
         return res.status(200).json(new APIResponse(200, 'Successfully unsubscribed from channel'));
 

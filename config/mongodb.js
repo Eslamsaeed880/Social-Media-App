@@ -5,7 +5,7 @@ const connectDb = async () => {
     mongoose.connection.on('connected', () => {
         console.log("DB Connected");
     })
-    await mongoose.connect(`${config.mongodbUri}/social_media_app`)
+    await mongoose.connect(config.mongodbUri)
 }
 
 export default connectDb;

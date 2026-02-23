@@ -1,0 +1,82 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: social-media-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: social-media-app
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - social-media-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: social-media-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - social-media-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: social-media-app
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      - PORT=3000
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/build
+      - /build/node_modules
+    networks:
+      - social-media-network
+    command: npm start
+
+  analytics-worker:
+    build: .
+    container_name: social-media-analytics-worker
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/build
+      - /build/node_modules
+    networks:
+      - social-media-network
+    command: node workers/analyticsWorker.js
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  social-media-network:
+    driver: bridge

@@ -5,6 +5,8 @@ import Like from '../models/like.js';
 import Video from '../models/video.js';
 import createNotification from '../utils/createNotification.js';
 import User from '../models/user.js';
+import { enqueueAnalyticsEvent } from '../utils/analyticsQueue.js';
+import crypto from 'crypto';
 
 // @Desc: Like a video or comment
 // Route: POST /api/v1/likes
@@ -42,6 +44,16 @@ export const likeVideo = async (req, res, next) => {
         await video.save();
         await createNotification(video.publisherId, user.id, 'like', `${userLiker.username} liked your video "${video.title}"`, 'video', video._id);
 
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'VIDEO_LIKED',
+                channelId: video.publisherId,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
+
         return res.status(201).json(new APIResponse(201, 'Video liked successfully', like));
 
     } catch (error) {
@@ -78,6 +90,16 @@ export const unlikeVideo = async (req, res, next) => {
         video.likes--;
 
         await video.save();
+
+        try {
+            await enqueueAnalyticsEvent({
+                eventId: crypto.randomUUID(),
+                type: 'VIDEO_UNLIKED',
+                channelId: video.publisherId,
+            });
+        } catch (analyticsError) {
+            console.error('Analytics event failed:', analyticsError);
+        }
 
         return res.status(200).json(new APIResponse(200, 'Video unliked successfully'));
 
