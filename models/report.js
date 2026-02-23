@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-import { Schema } from 'monoose';
+import { Schema } from 'mongoose';
 
 const reportSchema = new Schema({
     reportedBy: {
@@ -10,18 +10,27 @@ const reportSchema = new Schema({
     },
     reportedUser: {
         type: Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+        ref: 'User'
     },
     reason: {
         type: String,
         required: true,
         trim: true,
-        maxLength: 500
+        maxLength: 50
+    },
+    description: {
+        type: String,
+        trim: true,
+        maxLength: 1000,
+        required: true
     },
     videoId: {
         type: Schema.Types.ObjectId,
         ref: 'Video'
+    },
+    commentId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Comment'
     },
     status: {
         type: String,
