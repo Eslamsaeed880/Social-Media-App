@@ -303,3 +303,83 @@ export const deleteVideo = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get all comments (admin only)
+// @Route: GET /api/v1/admin/comments?page=1&limit=10&search=keyword&sort=createdAt&order=asc|desc
+// @Access: Private (admin)
+export const getAllComments = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 10, search, sort = 'createdAt', order = 'desc' } = req.query;
+
+        const query = search ? { content: { $regex: search, $options: 'i' } } : {};
+
+        const sortOrder = order === 'desc' ? -1 : 1;
+
+        const comments = await Comment.find(query)
+            .populate('createdBy', 'username email')
+            .populate('videoId', 'title')
+            .select('-replies')
+            .sort({ [sort]: sortOrder })
+            .skip((page - 1) * limit)
+            .limit(+limit);
+
+        const totalResults = await Comment.countDocuments(query);
+
+        return res.status(200).json(new APIResponse(200, { 
+            comments,
+            currentPage: +page,
+            totalResults,
+            totalPages: Math.ceil(totalResults / +limit)
+        }, 'Comments retrieved successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// Desc: Get comment by ID (admin only)
+// Route: GET /api/v1/admin/comments/:commentId
+// Access: Private (admin)
+export const getCommentById = async (req, res, next) => {
+    try {
+        const { commentId } = req.params;
+
+        const comment = await Comment.findById(commentId)
+            .populate('createdBy', 'username email')
+            .populate('videoId', 'title');
+
+        if (!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+
+        return res.status(200).json(new APIResponse(200, comment, 'Comment retrieved successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Delete a comment (admin only)
+// @Route: DELETE /api/v1/admin/comments/:commentId
+// @Access: Private (admin)
+export const deleteComment = async (req, res, next) => {
+    try {
+        const { commentId } = req.params;
+
+        const comment = await Comment.findById(commentId);
+
+        if (!comment) {
+            return next(new APIError(404, 'Comment not found'));
+        }
+
+        await comment.deleteOne();
+
+        return res.status(200).json(new APIResponse(200, {}, 'Comment deleted successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}

@@ -10,7 +10,10 @@ import {
     getCommentsByUserId,
     getAllVideos,
     getVideoById,
-    deleteVideo
+    deleteVideo,
+    getAllComments,
+    getCommentById,
+    deleteComment
 } from '../controllers/admin.js';
 import isAdmin from '../middlewares/isAdmin.js';
 
@@ -39,5 +42,11 @@ router.get('/videos', getAllVideos);
 router.get('/videos/:videoId', getVideoById);
 
 router.delete('/videos/:videoId', deleteVideo);
+
+router.get('/comments', getAllComments);
+
+router.get('/comments/:commentId', getCommentById);
+
+router.delete('/comments/:commentId', deleteComment);
 
 export default router;
