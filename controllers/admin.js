@@ -2,6 +2,7 @@ import Report from "../models/report.js";
 import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import User from "../models/user.js";
+import Video from "../models/video.js";
 
 // @Desc: Get all reports (admin only)
 // @Route: GET /api/v1/admin/reports?page=1&limit=10&status=pending  
@@ -135,6 +136,49 @@ export const getAllUsers = async (req, res, next) => {
             totalResults,
             totalPages: Math.ceil(totalResults / +limit)
         }, 'Users retrieved successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Get one user by ID (admin only)
+// @Route: GET /api/v1/admin/users/:userId?videos=true&page=1&limit=5
+// @Access: Private (admin)
+export const getUserById = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 5, videos = false } = req.query;
+        const { userId } = req.params;
+
+        if (req.user.role !== 'admin') {
+            return next(new APIError(403, 'Access denied'));
+        }
+
+        const user = await User.findById(userId).select('-password');
+
+        const userVideos = await Video
+            .find({ publisherId: userId })
+            .select('-videoFile')
+            .skip((page - 1) * limit)
+            .limit(+limit)
+
+        const totalVideos = await Video.countDocuments({ publisherId: userId })
+
+        if (!user) {
+            return next(new APIError(404, 'User not found'));
+        }
+
+        return res.status(200).json(new APIResponse(200, { 
+            user, 
+            videos: videos ? { 
+                userVideos, 
+                totalVideos, 
+                currentPage: +page, 
+                limit: +limit, 
+                totalPages: Math.ceil(totalVideos / +limit) 
+            } : null
+        }, 'User retrieved successfully'));
 
     } catch (error) {
         console.log(error);
