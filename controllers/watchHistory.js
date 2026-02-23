@@ -49,3 +49,20 @@ export const deleteWatchHistoryEntry = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Clear entire watch history
+// Route: DELETE /api/v1/watch-history
+// Access: Private
+export const clearWatchHistory = async (req, res, next) => {
+    try {
+        const { user } = req;
+
+        await WatchHistory.deleteMany({ user: user._id });
+
+        return res.status(200).json(new APIResponse(200, {}, 'Watch history cleared successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
