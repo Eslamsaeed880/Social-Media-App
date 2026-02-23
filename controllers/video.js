@@ -234,6 +234,137 @@ export const getAllVideos = async (req, res, next) => {
     }
 }
 
+// @Desc: Get trending videos (global or by category) in a recent time window
+// @route GET /api/v1/videos/trending?limit=10&category=tech&time=7d
+// @Access Public
+export const getTrendingVideos = async (req, res, next) => {
+    try {
+        const { limit, category, time = '7d' } = req.query;
+
+        let parsedLimit = null;
+        if (limit !== undefined && limit !== null && String(limit).trim() !== '') {
+            const numLimit = parseInt(limit, 10);
+            if (Number.isNaN(numLimit) || numLimit < 1) {
+                return next(new APIError(400, 'limit must be a positive number'));
+            }
+            parsedLimit = Math.min(numLimit, 100);
+        }
+
+        const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const videoMatchStage = { isPublished: true };
+        const normalizedCategory = typeof category === 'string' ? category.trim() : '';
+        const shouldFilterCategory = normalizedCategory && normalizedCategory !== 'null' && normalizedCategory !== 'undefined';
+
+        if (shouldFilterCategory) {
+            videoMatchStage.category = { $regex: `^${escapeRegex(normalizedCategory)}$`, $options: 'i' };
+        }
+
+        const now = new Date();
+        let sinceDate = null;
+
+        if (time === '24h') {
+            sinceDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        } else if (time === '7d') {
+            sinceDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        } else if (time === '30d') {
+            sinceDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        } else if (time !== 'all') {
+            return next(new APIError(400, "Invalid time value. Use one of: '24h', '7d', '30d', 'all'"));
+        }
+
+        const pipeline = [{ $match: videoMatchStage }];
+
+        if (time === 'all') {
+            pipeline.push({
+                $addFields: {
+                    periodViews: '$views',
+                },
+            });
+        } else {
+            pipeline.push(
+                {
+                    $lookup: {
+                        from: 'watchhistories',
+                        let: { videoId: '$_id' },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: { $eq: ['$videoId', '$$videoId'] },
+                                    watchedAt: { $gte: sinceDate },
+                                },
+                            },
+                            { $count: 'count' },
+                        ],
+                        as: 'periodStats',
+                    },
+                },
+                {
+                    $addFields: {
+                        periodViews: { $ifNull: [{ $first: '$periodStats.count' }, 0] },
+                    },
+                },
+                {
+                    $project: {
+                        periodStats: 0,
+                    },
+                }
+            );
+        }
+
+        pipeline.push(
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: 'publisherId',
+                    foreignField: '_id',
+                    as: 'owner',
+                    pipeline: [
+                        {
+                            $project: {
+                                username: 1,
+                                fullName: 1,
+                                avatar: 1,
+                            },
+                        },
+                    ],
+                },
+            },
+            {
+                $addFields: {
+                    owner: { $first: '$owner' },
+                },
+            },
+            { $sort: { periodViews: -1, views: -1, likes: -1, comments: -1, createdAt: -1 } }
+        );
+
+        if (parsedLimit) {
+            pipeline.push({ $limit: parsedLimit });
+        }
+
+        const videos = await Video.aggregate(pipeline);
+        const totalResults = await Video.countDocuments(videoMatchStage);
+
+        return res.status(200).json(
+            new APIResponse(
+                200,
+                {
+                    videos,
+                    totalResults,
+                    filters: {
+                        limit: parsedLimit,
+                        category: shouldFilterCategory ? normalizedCategory : null,
+                        time,
+                    },
+                },
+                'Trending videos fetched successfully'
+            )
+        );
+    } catch (error) {
+        console.error(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
 // @Desc: Get video by ID
 // @route GET /api/v1/videos?watch=videoId
 // @Access Public

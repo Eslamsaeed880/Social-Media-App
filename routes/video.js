@@ -1,6 +1,7 @@
 import express from 'express';
 import {
     getAllVideos,
+    getTrendingVideos,
     postVideo,
     getVideoById,
     togglePublishVideo,
@@ -15,6 +16,7 @@ import { upload } from '../middlewares/multer.js';
 const router = express.Router();
 
 router.get("/", getAllVideos);
+router.get("/trending", getTrendingVideos);
 
 router.post("/", isAuth, upload.fields([
     { name: 'videoFile', maxCount: 1 },
