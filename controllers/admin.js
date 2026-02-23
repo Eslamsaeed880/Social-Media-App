@@ -3,6 +3,7 @@ import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import User from "../models/user.js";
 import Video from "../models/video.js";
+import Comment from "../models/comment.js";
 
 // @Desc: Get all reports (admin only)
 // @Route: GET /api/v1/admin/reports?page=1&limit=10&status=pending  
@@ -144,11 +145,10 @@ export const getAllUsers = async (req, res, next) => {
 }
 
 // @Desc: Get one user by ID (admin only)
-// @Route: GET /api/v1/admin/users/:userId?videos=true&page=1&limit=5
+// @Route: GET /api/v1/admin/users/:userId
 // @Access: Private (admin)
 export const getUserById = async (req, res, next) => {
     try {
-        const { page = 1, limit = 5, videos = false } = req.query;
         const { userId } = req.params;
 
         if (req.user.role !== 'admin') {
@@ -157,27 +157,12 @@ export const getUserById = async (req, res, next) => {
 
         const user = await User.findById(userId).select('-password');
 
-        const userVideos = await Video
-            .find({ publisherId: userId })
-            .select('-videoFile')
-            .skip((page - 1) * limit)
-            .limit(+limit)
-
-        const totalVideos = await Video.countDocuments({ publisherId: userId })
-
         if (!user) {
             return next(new APIError(404, 'User not found'));
         }
 
         return res.status(200).json(new APIResponse(200, { 
-            user, 
-            videos: videos ? { 
-                userVideos, 
-                totalVideos, 
-                currentPage: +page, 
-                limit: +limit, 
-                totalPages: Math.ceil(totalVideos / +limit) 
-            } : null
+            user
         }, 'User retrieved successfully'));
 
     } catch (error) {
@@ -207,6 +192,71 @@ export const deleteUser = async (req, res, next) => {
 
         return res.status(200).json(new APIResponse(200, {}, 'User deleted successfully'));
 
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Get videos by user ID (admin only)
+// @Route: GET /api/v1/admin/users/:userId/videos?page=1&limit=10
+// @Access: Private (admin)
+export const getVideosByUserId = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+
+        if (req.user.role !== 'admin') {
+            return next(new APIError(403, 'Access denied'));
+        }
+
+        const videos = await Video.find({ publisherId: userId })
+            .select('-videoFile')
+            .skip((page - 1) * limit)
+            .limit(+limit)
+            .sort({ createdAt: -1 });
+
+        const totalResults = await Video.countDocuments({ publisherId: userId });
+
+        return res.status(200).json(new APIResponse(200, { 
+            videos,
+            currentPage: +page,
+            totalResults,
+            totalPages: Math.ceil(totalResults / +limit)
+        }, 'Videos retrieved successfully'));
+        
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Get comments by user ID (admin only)
+// @Route: GET /api/v1/admin/users/:userId/comments?page=1&limit=10
+// @Access: Private (admin)
+export const getCommentsByUserId = async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        const { page = 1, limit = 10 } = req.query;
+
+        if (req.user.role !== 'admin') {
+            return next(new APIError(403, 'Access denied'));
+        }
+
+        const comments = await Comment.find({ createdBy: userId })
+            .skip((page - 1) * limit)
+            .limit(+limit)
+            .sort({ createdAt: -1 });
+
+        const totalResults = await Comment.countDocuments({ createdBy: userId });
+
+        return res.status(200).json(new APIResponse(200, { 
+            comments,
+            currentPage: +page,
+            totalResults,
+            totalPages: Math.ceil(totalResults / +limit)
+        }, 'Comments retrieved successfully'));
+        
     } catch (error) {
         console.log(error);
         return next(new APIError(500, 'Server error'));
