@@ -101,3 +101,43 @@ export const getReportById = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get all users (admin only)
+// @Route: GET /api/v1/admin/users?page=1&limit=10&search=keyword&sort=createdAt|username|email&order=asc|desc
+// @Access: Private (admin)
+export const getAllUsers = async (req, res, next) => {
+    try {
+        if (req.user.role !== 'admin') {
+            return next(new APIError(403, 'Access denied'));
+        }
+
+        const { page = 1, limit = 10, search, sort = 'createdAt', order = 'desc' } = req.query;
+
+        const query = search ? { $or: [
+            { username: { $regex: search, $options: 'i' } },
+            { email: { $regex: search, $options: 'i' } }
+        ]} : {};
+
+        const sortField = sort === 'username' ? 'username' : sort === 'email' ? 'email' : sort;
+        const sortOrder = order === 'desc' ? -1 : 1;
+
+        const users = await User.find(query)
+            .select('-password')
+            .sort({ [sortField]: sortOrder })
+            .skip((page - 1) * limit)
+            .limit(+limit);
+
+        const totalResults = await User.countDocuments(query);
+
+        return res.status(200).json(new APIResponse(200, { 
+            users,
+            currentPage: +page,
+            totalResults,
+            totalPages: Math.ceil(totalResults / +limit)
+        }, 'Users retrieved successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
