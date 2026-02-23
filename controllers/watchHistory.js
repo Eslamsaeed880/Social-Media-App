@@ -25,3 +25,27 @@ export const getWatchHistory = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Delete a watch history entry
+// Route: DELETE /api/v1/watch-history/:historyId
+// Access: Private
+export const deleteWatchHistoryEntry = async (req, res, next) => {
+    try {
+        const { historyId } = req.params;
+        const { user } = req;
+
+        const historyEntry = await WatchHistory.findOne({ _id: historyId, user: user._id });
+
+        if (!historyEntry) {
+            return next(new APIError(404, 'Watch history entry not found'));
+        }
+
+        await historyEntry.deleteOne();
+
+        return res.status(200).json(new APIResponse(200, {}, 'Watch history entry deleted successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
