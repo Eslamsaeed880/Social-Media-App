@@ -1,7 +1,7 @@
 import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import Subscription from "../models/subscription.js";
-import createNotification from "../utils/createNotification.js";
+import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
 import User from "../models/user.js";
 import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import crypto from 'crypto';
@@ -47,7 +47,21 @@ export const subscribeToChannel = async (req, res, next) => {
         const userSubscriber = await User.findById(user.id);
         await channel.save();
         await subscription.save();
-        await createNotification(channelId, user.id, 'subscribe', `${userSubscriber.username} subscribed to your channel`, null, channel._id);
+        if (notifications) {
+            try {
+                await enqueueNotificationEvent({
+                    eventId: crypto.randomUUID(),
+                    recipientId: channelId,
+                    senderId: user.id,
+                    type: 'subscribe',
+                    content: `${userSubscriber.username} subscribed to your channel`,
+                    entityType: null,
+                    entityId: channel._id,
+                });
+            } catch (notificationError) {
+                console.error('Notification event failed:', notificationError);
+            }
+        }
 
         try {
             await enqueueAnalyticsEvent({

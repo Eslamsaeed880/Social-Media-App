@@ -3,7 +3,7 @@ import APIResponse from "../utils/APIResponse.js";
 import Comment from "../models/comment.js";
 import Video from "../models/video.js";
 import mongoose from "mongoose"
-import createNotification from "../utils/createNotification.js";
+import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
 import User from "../models/user.js";
 import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import crypto from 'crypto';
@@ -33,7 +33,19 @@ export const createComment = async (req, res, next) => {
         const userCommenter = await User.findById(req.user.id);
         await comment.save();
         await video.save();
-        await createNotification(video.publisherId, req.user.id, 'comment', `${userCommenter.username} commented on your video "${video.title}"`, 'video', video._id);
+        try {
+            await enqueueNotificationEvent({
+                eventId: crypto.randomUUID(),
+                recipientId: video.publisherId,
+                senderId: req.user.id,
+                type: 'comment',
+                content: `${userCommenter.username} commented on your video "${video.title}"`,
+                entityType: 'video',
+                entityId: video._id,
+            });
+        } catch (notificationError) {
+            console.error('Notification event failed:', notificationError);
+        }
 
         try {
             await enqueueAnalyticsEvent({
@@ -88,7 +100,19 @@ export const replyToComment = async (req, res, next) => {
         await comment.save();
         await parentComment.save();
         await video.save();
-        await createNotification(parentComment.createdBy, req.user.id, 'reply', `${userReplier.username} replied "${comment.content}" to your comment "${parentComment.content}"`, 'comment', parentComment._id);
+        try {
+            await enqueueNotificationEvent({
+                eventId: crypto.randomUUID(),
+                recipientId: parentComment.createdBy,
+                senderId: req.user.id,
+                type: 'reply',
+                content: `${userReplier.username} replied "${comment.content}" to your comment "${parentComment.content}"`,
+                entityType: 'comment',
+                entityId: parentComment._id,
+            });
+        } catch (notificationError) {
+            console.error('Notification event failed:', notificationError);
+        }
 
         try {
             await enqueueAnalyticsEvent({
