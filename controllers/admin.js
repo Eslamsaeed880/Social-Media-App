@@ -72,3 +72,32 @@ export const updateReportStatus = async (req, res, next) => {
         return next(new APIError(500, 'Server error'));
     }
 }
+
+// @Desc: Get one report by ID (admin only)
+// @Route: GET /api/v1/admin/reports/:reportId
+// @Access: Private (admin)
+export const getReportById = async (req, res, next) => {
+    try {
+        const { reportId } = req.params;
+
+        if (req.user.role !== 'admin') {
+            return next(new APIError(403, 'Access denied'));
+        }
+
+        const report = await Report.findById(reportId)
+            .populate('reportedBy', 'username email')
+            .populate('reportedUser', 'username email')
+            .populate('videoId', 'title')
+            .populate('commentId', 'content');
+
+        if (!report) {
+            return next(new APIError(404, 'Report not found'));
+        }
+
+        return res.status(200).json(new APIResponse(200, report, 'Report retrieved successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
