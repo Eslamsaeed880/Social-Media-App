@@ -3,12 +3,37 @@ import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import Video from "../models/video.js";
 import User from "../models/user.js";
+import Subscription from "../models/subscription.js";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
 import VideoCategory from "../models/videoCategory.js";
 import WatchHistory from "../models/watchHistory.js";
 import { addToWatchHistory } from "../utils/addToWatchHistory.js";
 import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
+import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
 import crypto from 'crypto';
+
+const notifySubscribersForPublishedVideo = async ({ channelId, videoId, videoTitle, publisherUsername }) => {
+    const subscriptions = await Subscription.find({
+        channelId,
+        notificationsEnabled: true,
+    }).select('subscriberId').lean();
+
+    if (!subscriptions.length) {
+        return;
+    }
+
+    await Promise.allSettled(
+        subscriptions.map((subscription) => enqueueNotificationEvent({
+            eventId: crypto.randomUUID(),
+            recipientId: subscription.subscriberId,
+            senderId: channelId,
+            type: 'video',
+            content: `${publisherUsername} published a new video: ${videoTitle}`,
+            entityType: 'video',
+            entityId: videoId,
+        }))
+    );
+};
 
 // @Desc: Upload a new video
 // @route POST /api/v1/videos
@@ -89,6 +114,21 @@ export const postVideo = async (req, res, next) => {
             ageRestriction,
             isPublished,
         });
+
+        if (video.isPublished) {
+            try {
+                const publisher = await User.findById(req.user.id).select('username').lean();
+
+                await notifySubscribersForPublishedVideo({
+                    channelId: req.user.id,
+                    videoId: video._id,
+                    videoTitle: video.title,
+                    publisherUsername: publisher?.username || 'A channel',
+                });
+            } catch (notificationError) {
+                console.error('Publish notification event failed:', notificationError);
+            }
+        }
 
         return res.status(201)
             .json(
@@ -273,6 +313,21 @@ export const togglePublishVideo = async (req, res, next) => {
 
         video.isPublished = !video.isPublished;
         await video.save();
+
+        if (video.isPublished) {
+            try {
+                const publisher = await User.findById(req.user.id).select('username').lean();
+
+                await notifySubscribersForPublishedVideo({
+                    channelId: req.user.id,
+                    videoId: video._id,
+                    videoTitle: video.title,
+                    publisherUsername: publisher?.username || 'A channel',
+                });
+            } catch (notificationError) {
+                console.error('Publish notification event failed:', notificationError);
+            }
+        }
 
         return res.status(200).json(
             new APIResponse(
