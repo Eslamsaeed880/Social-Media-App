@@ -8,6 +8,9 @@ import {
     deleteUser,
     getVideosByUserId,
     getCommentsByUserId,
+    getAllVideos,
+    getVideoById,
+    deleteVideo
 } from '../controllers/admin.js';
 import isAdmin from '../middlewares/isAdmin.js';
 
@@ -30,5 +33,11 @@ router.delete('/users/:userId', deleteUser);
 router.get('/users/:userId/videos', getVideosByUserId);
 
 router.get('/users/:userId/comments', getCommentsByUserId);
+
+router.get('/videos', getAllVideos);
+
+router.get('/videos/:videoId', getVideoById);
+
+router.delete('/videos/:videoId', deleteVideo);
 
 export default router;

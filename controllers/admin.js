@@ -12,10 +12,6 @@ export const getAllReports = async (req, res, next) => {
     try {
         const { page = 1, limit = 10, status } = req.query;
 
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
-
         const reports = await Report.find(status ? { status } : {})
             .populate('reportedBy', 'username email')
             .populate('reportedUser', 'username email')
@@ -48,10 +44,6 @@ export const updateReportStatus = async (req, res, next) => {
         const { reportId } = req.params;
         const { status, reviewNotes } = req.body;
 
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
-
         if (!['pending', 'reviewed', 'resolved'].includes(status)) {
             return next(new APIError(400, 'Invalid status value'));
         }
@@ -82,10 +74,6 @@ export const getReportById = async (req, res, next) => {
     try {
         const { reportId } = req.params;
 
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
-
         const report = await Report.findById(reportId)
             .populate('reportedBy', 'username email')
             .populate('reportedUser', 'username email')
@@ -109,10 +97,6 @@ export const getReportById = async (req, res, next) => {
 // @Access: Private (admin)
 export const getAllUsers = async (req, res, next) => {
     try {
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
-
         const { page = 1, limit = 10, search, sort = 'createdAt', order = 'desc' } = req.query;
 
         const query = search ? { $or: [
@@ -151,10 +135,6 @@ export const getUserById = async (req, res, next) => {
     try {
         const { userId } = req.params;
 
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
-
         const user = await User.findById(userId).select('-password');
 
         if (!user) {
@@ -177,10 +157,6 @@ export const getUserById = async (req, res, next) => {
 export const deleteUser = async (req, res, next) => {
     try {
         const { userId } = req.params;
-
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
 
         const user = await User.findById(userId);
 
@@ -205,10 +181,6 @@ export const getVideosByUserId = async (req, res, next) => {
     try {
         const { userId } = req.params;
         const { page = 1, limit = 10 } = req.query;
-
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
 
         const videos = await Video.find({ publisherId: userId })
             .select('-videoFile')
@@ -239,10 +211,6 @@ export const getCommentsByUserId = async (req, res, next) => {
         const { userId } = req.params;
         const { page = 1, limit = 10 } = req.query;
 
-        if (req.user.role !== 'admin') {
-            return next(new APIError(403, 'Access denied'));
-        }
-
         const comments = await Comment.find({ createdBy: userId })
             .skip((page - 1) * limit)
             .limit(+limit)
@@ -257,6 +225,79 @@ export const getCommentsByUserId = async (req, res, next) => {
             totalPages: Math.ceil(totalResults / +limit)
         }, 'Comments retrieved successfully'));
         
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Geet all videos (admin only)
+// @Route: GET /api/v1/admin/videos?page=1&limit=10&search=keyword&sort=createdAt|title&order=asc|desc
+// @Access: Private (admin)
+export const getAllVideos = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 10, search, sort = 'createdAt', order = 'desc' } = req.query;
+
+        const query = search ? { title: { $regex: search, $options: 'i' } } : {};
+
+        const sortField = sort === 'title' ? 'title' : sort;
+        const sortOrder = order === 'desc' ? -1 : 1;
+
+        const videos = await Video.find(query)
+            .select('-videoFile -description -tags -duration')
+            .sort({ [sortField]: sortOrder })
+            .skip((page - 1) * limit)
+            .limit(+limit);
+
+        const totalResults = await Video.countDocuments(query);
+
+        return res.status(200).json(new APIResponse(200, { 
+            videos,
+            currentPage: +page,
+            totalResults,
+            totalPages: Math.ceil(totalResults / +limit)
+        }, 'Videos retrieved successfully'));
+
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Get video by ID (admin only)
+// @Route: GET /api/v1/admin/videos/:videoId
+// @Access: Private (admin)
+export const getVideoById = async (req, res, next) => {
+    try {
+        const { videoId } = req.params;
+        
+        const video = await Video.findById(videoId)
+            .populate('publisherId', 'username email');
+
+        return res.status(200).json(new APIResponse(200, video, 'Video retrieved successfully'));
+    } catch (error) {
+        console.log(error);
+        return next(new APIError(500, 'Server error'));
+    }
+}
+
+// @Desc: Delete a video (admin only)
+// @Route: DELETE /api/v1/admin/videos/:videoId
+// @Access: Private (admin)
+export const deleteVideo = async (req, res, next) => {
+    try {
+        const { videoId } = req.params;
+
+        const video = await Video.findById(videoId);
+
+        if (!video) {
+            return next(new APIError(404, 'Video not found'));
+        }
+
+        await video.deleteOne();
+
+        return res.status(200).json(new APIResponse(200, {}, 'Video deleted successfully'));
+
     } catch (error) {
         console.log(error);
         return next(new APIError(500, 'Server error'));
