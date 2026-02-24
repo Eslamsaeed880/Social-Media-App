@@ -16,6 +16,7 @@ redisClient.connect().catch((error) => {
 });
 
 const CACHE_INDEX_KEY = 'cache:index';
+const CACHE_DEBUG = String(process.env.CACHE_DEBUG || '').toLowerCase() === 'true';
 
 const isRedisAvailable = () => redisClient.isReady;
 
@@ -63,19 +64,32 @@ export const setCache = async (key, payload, ttlSeconds = 60) => {
 export const invalidateCacheByPrefixes = async (prefixes = []) => {
     try {
         if (!isRedisAvailable() || !prefixes.length) {
+            if (CACHE_DEBUG) {
+                console.log('[cache:invalidate:skip] redis unavailable or no prefixes');
+            }
             return;
         }
 
         const indexedKeys = await redisClient.sMembers(CACHE_INDEX_KEY);
 
         if (!indexedKeys.length) {
+            if (CACHE_DEBUG) {
+                console.log('[cache:invalidate:skip] cache index empty');
+            }
             return;
         }
 
         const keysToDelete = indexedKeys.filter((key) => prefixes.some((prefix) => key.startsWith(prefix)));
 
         if (!keysToDelete.length) {
+            if (CACHE_DEBUG) {
+                console.log(`[cache:invalidate:skip] no keys match prefixes: ${prefixes.join(',')}`);
+            }
             return;
+        }
+
+        if (CACHE_DEBUG) {
+            console.log(`[cache:invalidate] prefixes=${prefixes.join(',')} matched=${keysToDelete.length}`);
         }
 
         const pipeline = redisClient.multi();
