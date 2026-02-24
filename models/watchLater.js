@@ -5,8 +5,7 @@ const watchLaterSchema = new Schema({
     userId: {
         type: Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
-        unique: true
+        required: true
     },
     videoId: {
         type: Schema.Types.ObjectId,
@@ -14,6 +13,8 @@ const watchLaterSchema = new Schema({
         required: true
     }
 }, { timestamps: true });
+
+watchLaterSchema.index({ userId: 1, videoId: 1 }, { unique: true });
 
 const WatchLater = mongoose.model('WatchLater', watchLaterSchema);
 

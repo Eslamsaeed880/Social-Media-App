@@ -2,6 +2,7 @@ import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import WatchLater from "../models/watchLater.js";
 import Video from "../models/video.js";
+import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
 
 // @Desc: Add a video to the user's watch later list
 // @Route: POST /api/v1/watch-later
@@ -10,7 +11,7 @@ export const addToWatchLater = async (req, res, next) => {
     try {
         const { videoId } = req.body;
 
-        const video = await Video.findById(videoId).where({ isPublished: true });
+        const video = await Video.findOne({ _id: videoId, isPublished: true });
 
         if (!video) {
             return next(new APIError(404, 'Video not found'));
@@ -28,6 +29,8 @@ export const addToWatchLater = async (req, res, next) => {
         });
 
         await watchLaterEntry.save();
+
+        await invalidateCacheByPrefixes([`watch-later:all:${req.user.id}:`]);
 
         return res.status(201).json(new APIResponse(201, watchLaterEntry, 'Video added to watch later list'));
 
@@ -65,6 +68,8 @@ export const removeFromWatchLater = async (req, res, next) => {
         }
 
         await WatchLater.deleteOne({ _id: watchLaterEntry._id });
+
+        await invalidateCacheByPrefixes([`watch-later:all:${req.user.id}:`]);
 
         return res.status(200).json(new APIResponse(200, {}, 'Video removed from watch later list'));
     } catch (error) {

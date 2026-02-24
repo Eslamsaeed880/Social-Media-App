@@ -99,8 +99,6 @@ const userSchema = new Schema({
     },
 }, {minimize: false, timestamps: true});
 
-userSchema.index({username: 1});
-userSchema.index({email: 1}); 
 userSchema.index({isVerified: 1}); 
 userSchema.index({role: 1}); 
 userSchema.index({createdAt: -1}); 

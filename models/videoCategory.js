@@ -17,8 +17,6 @@ const videoCategorySchema = new Schema({
 
 }, { timestamps: true });
 
-videoCategorySchema.index({ name: 1 }, { unique: true });
-
 const VideoCategory = mongoose.model('VideoCategory', videoCategorySchema);
 
 export default VideoCategory;
