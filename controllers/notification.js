@@ -101,7 +101,7 @@ export const markAllAsRead = async (req, res, next) => {
             { $set: { isRead: true } }
         );
 
-        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:`]);
+        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:all:${user.id}:`]);
 
         return res.status(200).json(new APIResponse(200, {}, 'All notifications marked as read'));
     } catch (error) {
@@ -131,7 +131,7 @@ export const markAsRead = async (req, res, next) => {
         notification.isRead = true;
         await notification.save();
 
-        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:`]);
+        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:all:${user.id}:`]);
 
         return res.status(200).json(new APIResponse(200, notification, 'Notification marked as read'));
 
@@ -160,7 +160,7 @@ export const deleteNotification = async (req, res, next) => {
         }
         await notification.deleteOne();
 
-        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:`]);
+        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:all:${user.id}:`]);
 
         return res.status(200).json(new APIResponse(200, {}, 'Notification deleted successfully'));
 

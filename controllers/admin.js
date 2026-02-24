@@ -12,8 +12,8 @@ const VIDEO_CACHE_PREFIX = 'videos';
 const COMMENT_CACHE_PREFIX = 'comments';
 const ADMIN_CACHE_PREFIX = 'admin';
 
-const invalidateCache = (prefixes) => {
-    invalidateCacheByPrefixes([`${ADMIN_CACHE_PREFIX}:${prefixes}`, prefixes]);
+const invalidateAdminCache = (scope) => {
+    invalidateCacheByPrefixes([`${ADMIN_CACHE_PREFIX}:${scope}:`]);
 }
 
 // @Desc: Get all reports (admin only)
@@ -69,7 +69,7 @@ export const updateReportStatus = async (req, res, next) => {
         report.reviewNotes = reviewNotes || report.reviewNotes;
 
         await report.save();
-        invalidateCache(REPORT_CACHE_PREFIX);
+        await invalidateAdminCache('reports');
 
         return res.status(200).json(new APIResponse(200, report, 'Report status updated successfully'));
 
@@ -178,7 +178,7 @@ export const deleteUser = async (req, res, next) => {
 
         await user.deleteOne();
 
-        invalidateCache(USER_CACHE_PREFIX);
+        await invalidateAdminCache('users');
 
         return res.status(200).json(new APIResponse(200, {}, 'User deleted successfully'));
 
@@ -310,7 +310,7 @@ export const deleteVideo = async (req, res, next) => {
 
         await video.deleteOne();
 
-        invalidateCache(VIDEO_CACHE_PREFIX);
+        await invalidateAdminCache('videos');
 
         return res.status(200).json(new APIResponse(200, {}, 'Video deleted successfully'));
 
@@ -392,7 +392,7 @@ export const deleteComment = async (req, res, next) => {
 
         await comment.deleteOne();
 
-        invalidateCache(COMMENT_CACHE_PREFIX);
+        await invalidateAdminCache('comments');
 
         return res.status(200).json(new APIResponse(200, {}, 'Comment deleted successfully'));
 

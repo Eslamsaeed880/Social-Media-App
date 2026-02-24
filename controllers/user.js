@@ -210,6 +210,7 @@ export const updateProfilePic = async (req, res, next) => {
             user.profilePicture.publicId = undefined;
             user.profilePicture.url = undefined;
             await user.save();
+            await invalidateUserCaches(req.originalUrl);
             const response = new APIResponse(200, { updatedUser: user }, "User avatar removed successfully");
             return res.status(response.statusCode).json(response);
         }
@@ -224,6 +225,7 @@ export const updateProfilePic = async (req, res, next) => {
             };
 
             await user.save();
+            await invalidateUserCaches(req.originalUrl);
             const response = new APIResponse(200, { updatedUser: user }, "User avatar updated successfully");
             res.status(response.statusCode).json(response);
         }
@@ -249,6 +251,7 @@ export const updateCover = async (req, res, next) => {
             user.coverImage.publicId = undefined;
             user.coverImage.url = undefined;
             await user.save();
+            await invalidateUserCaches(req.originalUrl);
             const response = new APIResponse(200, { updatedUser: user }, "User cover image removed successfully");
             return res.status(response.statusCode).json(response);
         }
@@ -262,6 +265,7 @@ export const updateCover = async (req, res, next) => {
                 url: uploadedCover.url
             };
             await user.save();
+            await invalidateUserCaches(req.originalUrl);
             const response = new APIResponse(200, { updatedUser: user }, "User cover image updated successfully");
             res.status(response.statusCode).json(response);
         }

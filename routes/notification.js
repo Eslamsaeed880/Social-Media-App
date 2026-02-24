@@ -14,7 +14,10 @@ router.get("/", isAuth, cache({
     prefix: 'notifications',
     scope: 'all',
     ttlSeconds: 60,
-    includeUser: true,
+    keyBuilder: ({ req, buildCacheKey }) => buildCacheKey(
+        `notifications:all:${req.user.id}`,
+        { url: req.originalUrl || req.url }
+    ),
 }), getNotifications);
 
 router.patch("/read", isAuth, markAllAsRead);
