@@ -4,6 +4,17 @@ import APIResponse from "../utils/APIResponse.js";
 import User from "../models/user.js";
 import Video from "../models/video.js";
 import Comment from "../models/comment.js";
+import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
+
+const REPORT_CACHE_PREFIX = 'reports';
+const USER_CACHE_PREFIX = 'users';
+const VIDEO_CACHE_PREFIX = 'videos';
+const COMMENT_CACHE_PREFIX = 'comments';
+const ADMIN_CACHE_PREFIX = 'admin';
+
+const invalidateCache = (prefixes) => {
+    invalidateCacheByPrefixes([`${ADMIN_CACHE_PREFIX}:${prefixes}`, prefixes]);
+}
 
 // @Desc: Get all reports (admin only)
 // @Route: GET /api/v1/admin/reports?page=1&limit=10&status=pending  
@@ -58,6 +69,7 @@ export const updateReportStatus = async (req, res, next) => {
         report.reviewNotes = reviewNotes || report.reviewNotes;
 
         await report.save();
+        invalidateCache(REPORT_CACHE_PREFIX);
 
         return res.status(200).json(new APIResponse(200, report, 'Report status updated successfully'));
 
@@ -165,6 +177,8 @@ export const deleteUser = async (req, res, next) => {
         }
 
         await user.deleteOne();
+
+        invalidateCache(USER_CACHE_PREFIX);
 
         return res.status(200).json(new APIResponse(200, {}, 'User deleted successfully'));
 
@@ -296,6 +310,8 @@ export const deleteVideo = async (req, res, next) => {
 
         await video.deleteOne();
 
+        invalidateCache(VIDEO_CACHE_PREFIX);
+
         return res.status(200).json(new APIResponse(200, {}, 'Video deleted successfully'));
 
     } catch (error) {
@@ -375,6 +391,8 @@ export const deleteComment = async (req, res, next) => {
         }
 
         await comment.deleteOne();
+
+        invalidateCache(COMMENT_CACHE_PREFIX);
 
         return res.status(200).json(new APIResponse(200, {}, 'Comment deleted successfully'));
 
