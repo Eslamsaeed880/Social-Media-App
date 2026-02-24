@@ -10,7 +10,14 @@ import WatchHistory from "../models/watchHistory.js";
 import { addToWatchHistory } from "../utils/addToWatchHistory.js";
 import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
+import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
 import crypto from 'crypto';
+
+const VIDEO_CACHE_PREFIX = 'videos';
+
+const invalidateVideoCaches = async () => {
+    await invalidateCacheByPrefixes([`${VIDEO_CACHE_PREFIX}:`]);
+};
 
 const notifySubscribersForPublishedVideo = async ({ channelId, videoId, videoTitle, publisherUsername }) => {
     const subscriptions = await Subscription.find({
@@ -114,6 +121,8 @@ export const postVideo = async (req, res, next) => {
             ageRestriction,
             isPublished,
         });
+
+        await invalidateVideoCaches();
 
         if (video.isPublished) {
             try {
@@ -444,6 +453,7 @@ export const togglePublishVideo = async (req, res, next) => {
 
         video.isPublished = !video.isPublished;
         await video.save();
+        await invalidateVideoCaches();
 
         if (video.isPublished) {
             try {
@@ -500,6 +510,7 @@ export const updateVideo = async (req, res, next) => {
         });
         
         await video.save();
+        await invalidateVideoCaches();
 
         return res.status(200).json(
             new APIResponse(
@@ -534,6 +545,7 @@ export const deleteVideo = async (req, res, next) => {
         await deleteFromCloudinary(video.videoFile.publicId);
         await deleteFromCloudinary(video.thumbnail.publicId);
         await video.deleteOne();
+        await invalidateVideoCaches();
 
         return res.status(200).json(
             new APIResponse(
