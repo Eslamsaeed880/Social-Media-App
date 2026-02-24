@@ -7,6 +7,13 @@ import transporter from '../config/transporter.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
+import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
+
+const USER_CACHE_PREFIX = 'user';
+
+const invalidateUserCaches = async (originalUrl) => {
+    await invalidateCacheByPrefixes([`${USER_CACHE_PREFIX}:profile:url=${originalUrl}`]);
+};
 
 // @Desc: Implement user sign-up logic
 // @route: POST /api/v1/users/signup
@@ -157,6 +164,7 @@ export const updateUserProfile = async (req, res, next) => {
             });
 
             await user.save();
+            await invalidateUserCaches(req.originalUrl);
 
             const response = new APIResponse(200, { updatedUser: user }, "User profile updated successfully");
             res.status(response.statusCode).json(response);
@@ -260,27 +268,6 @@ export const getUserProfile = async (req, res, next) => {
     }
 }
 
-// @Desc: Implement get user activity history logic
-// @route: GET /api/v1/users/history
-// Access: Private
-export const getHistory = async (req, res, next) => {
-    try {
-        const userId = req.user.id;
-        const user = await User
-            .findById(userId)
-            .select('watchedVideos')
-        
-        const videos = user.watchedVideos;
-        videos.map((v) => {
-            v.populate('thumbnail title description views likes duration');
-        })
-
-        const response = new APIResponse(200, { history: user.watchedVideos }, "User history retrieved successfully");
-        res.status(response.statusCode).json(response);
-    } catch (error) {
-        next(new APIError(500, "Failed to retrieve user history", { errors: error.message }));
-    }
-};
 
 // @Desc: Implement password reset request logic
 // @route: POST /api/v1/users/password-reset-request

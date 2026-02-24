@@ -1,6 +1,5 @@
 import { upload } from "../middlewares/multer.js";
 import express from 'express';
-
 import { 
     signUp, 
     login, 
@@ -10,14 +9,15 @@ import {
     updateCover, 
     updateUserProfile ,
     getUserProfile,
-    getHistory,
     resetPassword,
     googleLoginCallback,
 } from "../controllers/user.js";
 import isAuth from "../middlewares/isAuth.js";
 import passport from "passport";
+import cache from "../middlewares/cache.js";
 
 const router = express.Router();
+const USER_CACHE_TTL = Number(process.env.USER_CACHE_TTL) || 60;
 
 router.post("/signup", 
     upload.fields([
@@ -39,9 +39,12 @@ router.patch("/confirm-reset-password", confirmResetPassword);
 
 router.patch("/change-password", isAuth, changePassword);
 
-router.get("/history", isAuth, getHistory);
-
-router.get("/@:username", getUserProfile);
+router.get("/@:username", cache({
+    prefix: 'user',
+    scope: 'profile',
+    ttlSeconds: USER_CACHE_TTL,
+    includeUser: false,
+}), getUserProfile);
 
 router.put("/@:username", isAuth, updateUserProfile);
 
