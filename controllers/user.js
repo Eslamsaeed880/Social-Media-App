@@ -119,6 +119,22 @@ export const login = async (req, res, next) => {
     }
 }
 
+// @Desc: Get Google authentication URL
+// @route: GET /api/v1/users/google
+// Access: Public
+export const getGoogleAuthUrl = async (req, res) => {
+    try {
+        const redirectUri = encodeURIComponent(config.googleCallbackURL);
+        const scope = encodeURIComponent('profile email');
+        const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${config.googleClientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+        
+        const response = new APIResponse(200, { authUrl: googleAuthUrl }, "Google authentication URL generated");
+        res.status(response.statusCode).json(response);
+    } catch (error) {
+        return res.status(500).json(new APIResponse(500, null, "Failed to generate Google auth URL", { errors: error.message }));
+    }
+}
+
 // @Desc: Implement Google login callback logic
 // @route: GET /api/v1/users/google/callback
 // Access: Public

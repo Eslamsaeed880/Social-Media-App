@@ -10,6 +10,7 @@ import {
     updateUserProfile ,
     getUserProfile,
     resetPassword,
+    getGoogleAuthUrl,
     googleLoginCallback,
 } from "../controllers/user.js";
 import isAuth from "../middlewares/isAuth.js";
@@ -29,9 +30,9 @@ router.post("/signup",
 
 router.post("/login", login);
 
-router.post("/google", passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get("/google", getGoogleAuthUrl);
 
-router.post("/google/callback", passport.authenticate('google', { session: false, failureRedirect: '/login' }), googleLoginCallback);
+router.get("/google/callback", passport.authenticate('google', { session: false, failureRedirect: '/login' }), googleLoginCallback);
 
 router.post("/password-reset", resetPassword);
 
