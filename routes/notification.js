@@ -6,10 +6,16 @@ import {
     deleteNotification 
 } from '../controllers/notification.js';
 import isAuth from '../middlewares/isAuth.js';
+import cache from '../middlewares/cache.js';
 
 const router = express.Router();
 
-router.get("/", isAuth, getNotifications);
+router.get("/", isAuth, cache({
+    prefix: 'notifications',
+    scope: 'all',
+    ttlSeconds: 60,
+    includeUser: true,
+}), getNotifications);
 
 router.patch("/read", isAuth, markAllAsRead);
 

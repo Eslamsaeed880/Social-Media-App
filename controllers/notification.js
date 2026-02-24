@@ -3,6 +3,9 @@ import APIResponse from '../utils/APIResponse.js';
 import Notification from '../models/notification.js';
 import User from '../models/user.js';
 import mongoose from 'mongoose';
+import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
+
+const NOTIFICATIONS_CACHE_PREFIX = 'notifications';
 
 // @Desc: Get notifications for the authenticated user with pagination
 // Route: GET /api/v1/notifications
@@ -96,7 +99,9 @@ export const markAllAsRead = async (req, res, next) => {
         await Notification.updateMany(
             { recipient: user.id, isRead: false },
             { $set: { isRead: true } }
-        )
+        );
+
+        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:`]);
 
         return res.status(200).json(new APIResponse(200, {}, 'All notifications marked as read'));
     } catch (error) {
@@ -126,6 +131,8 @@ export const markAsRead = async (req, res, next) => {
         notification.isRead = true;
         await notification.save();
 
+        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:`]);
+
         return res.status(200).json(new APIResponse(200, notification, 'Notification marked as read'));
 
     } catch (error) {
@@ -151,8 +158,9 @@ export const deleteNotification = async (req, res, next) => {
         if (!notification) {
             return next(new APIError(404, 'Notification not found'));
         }
-
         await notification.deleteOne();
+
+        await invalidateCacheByPrefixes([`${NOTIFICATIONS_CACHE_PREFIX}:`]);
 
         return res.status(200).json(new APIResponse(200, {}, 'Notification deleted successfully'));
 
