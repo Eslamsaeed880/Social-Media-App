@@ -1,6 +1,7 @@
 import APIError from '../utils/APIError.js';
 import APIResponse from '../utils/APIResponse.js';
 import WatchHistory from '../models/watchHistory.js';
+import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
 
 // @Desc: Get user's watch history
 // Route: GET /api/v1/watch-history?page=1&limit=10
@@ -42,6 +43,8 @@ export const deleteWatchHistoryEntry = async (req, res, next) => {
 
         await historyEntry.deleteOne();
 
+        await invalidateCacheByPrefixes([`watch-history:all:${user.id}:`]);
+
         return res.status(200).json(new APIResponse(200, {}, 'Watch history entry deleted successfully'));
 
     } catch (error) {
@@ -58,6 +61,8 @@ export const clearWatchHistory = async (req, res, next) => {
         const { user } = req;
 
         await WatchHistory.deleteMany({ user: user._id });
+
+        await invalidateCacheByPrefixes([`watch-history:all:${user.id}:`]);
 
         return res.status(200).json(new APIResponse(200, {}, 'Watch history cleared successfully'));
 
