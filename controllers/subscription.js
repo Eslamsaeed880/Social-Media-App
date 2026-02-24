@@ -5,6 +5,7 @@ import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
 import User from "../models/user.js";
 import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import crypto from 'crypto';
+import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
 
 // @Desc: Subscribe to a channel
 // Route: POST /api/v1/subscriptions
@@ -47,6 +48,9 @@ export const subscribeToChannel = async (req, res, next) => {
         const userSubscriber = await User.findById(user.id);
         await channel.save();
         await subscription.save();
+
+        await invalidateCacheByPrefixes([`subscriptions:user-subscriptions:${user.id}:`, `subscriptions:subscribers:${channelId}:`]);
+
         if (notifications) {
             try {
                 await enqueueNotificationEvent({
@@ -114,6 +118,8 @@ export const unsubscribeFromChannel = async (req, res, next) => {
             console.error('Analytics event failed:', analyticsError);
         }
 
+        await invalidateCacheByPrefixes([`subscriptions:user-subscriptions:${user.id}:`, `subscriptions:subscribers:${channelId}:`]);
+
         return res.status(200).json(new APIResponse(200, 'Successfully unsubscribed from channel'));
 
     } catch (error) {
@@ -163,6 +169,7 @@ export const getUserSubscriptions = async (req, res, next) => {
 
         const [subscriptions, totalSubscriptions] = await Promise.all([
             Subscription.find({ subscriberId: user.id })
+                .select('-notificationsEnabled -createdAt -updatedAt -__v')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(+limit)
@@ -199,6 +206,7 @@ export const getChannelSubscribers = async (req, res, next) => {
 
         const [subscriptions, totalSubscribers] = await Promise.all([
             Subscription.find({ channelId })
+                .select('-notificationsEnabled -createdAt -updatedAt -__v')
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(+limit)
