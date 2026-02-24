@@ -27,7 +27,11 @@ const config = {
 
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    googleCallbackURL: process.env.GOOGLE_CALLBACK_URL
+    googleCallbackURL: process.env.GOOGLE_CALLBACK_URL,
+
+    redisUrl: process.env.REDIS_URL,
+    videoCacheTTL: Number(process.env.VIDEO_CACHE_TTL) || 60,
+    apiCacheTTL: Number(process.env.API_CACHE_TTL) || 60,
 }
 
 export default config;

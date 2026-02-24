@@ -38,6 +38,7 @@
     "nodemailer-sendgrid-transport": "^0.2.0",
     "nodemon": "^3.1.11",
     "passport": "^0.7.0",
-    "passport-google-oauth20": "^2.0.0"
+    "passport-google-oauth20": "^2.0.0",
+    "redis": "^5.11.0"
   }
 }
