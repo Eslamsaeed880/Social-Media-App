@@ -53,16 +53,7 @@ const notifySubscribersForPublishedVideo = async ({ channelId, videoId, videoTit
 // @Access Private
 export const postVideo = async (req, res, next) => {
     try {
-        const { title, description, tags, category, ageRestriction } = req.body;
-
-        let isPublished = false;
-        if(req.body.isPublished === "true") {
-            isPublished = true;
-        }
-
-        if(!title || !description) {
-            return next(new APIError(400, 'Title and description are required'));
-        }
+        const { title, description, tags, category, ageRestriction, isPublished } = req.body;
 
         let cat;
         if(category) {
@@ -75,7 +66,7 @@ export const postVideo = async (req, res, next) => {
         }
 
         if(!req.files || !req.files.videoFile || !req.files.thumbnail) {
-            throw new APIError(400, 'Video file and thumbnail are required');
+            return next(new APIError(400, 'Video file and thumbnail are required'));
         }
 
         const videoLocalPath = req.files.videoFile[0].path;
@@ -264,15 +255,11 @@ export const getTrendingVideos = async (req, res, next) => {
 }
 
 // @Desc: Get video by ID
-// @route GET /api/v1/videos?watch=videoId
+// @route GET /api/v1/videos/:id
 // @Access Public
 export const getVideoById = async (req, res, next) => {
     try {
-        const id = req.params.id;
-
-        if(!id) {
-            return next(new APIError(400, 'Video ID is required'));
-        }
+        const { id } = req.params;
 
         const video = await Video.findById(id).populate({
             path: 'publisherId',
@@ -394,10 +381,14 @@ export const updateVideo = async (req, res, next) => {
             return next(new APIError(403, 'You are not allowed to perform this action'));
         }
 
+        if(!req.body || Object.keys(req.body).length === 0) {
+            return next(new APIError(400, 'No fields provided to update'));
+        }
+
         const attributesToUpdate = ['title', 'description', 'tags', 'category', 'ageRestriction'];
 
         attributesToUpdate.forEach(attr => {
-            if(req.body[attr]) {
+            if(req.body.hasOwnProperty(attr)) {
                 video[attr] = req.body[attr];
             }
         });
@@ -413,8 +404,8 @@ export const updateVideo = async (req, res, next) => {
             )
         );
     } catch (error) {
-        console.error(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Update video error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -452,6 +443,9 @@ export const deleteVideo = async (req, res, next) => {
     }
 }
 
+// @Desc: Get videos uploaded by the authenticated user with filtering, sorting, and pagination
+// @route GET /api/v1/videos/my-videos?page=1&limit=10&query=tutorials&sortBy=views&sortType=desc
+// @Access Private
 export const getMyVideos = async (req, res, next) => {
     try {
         const { page = 1, limit = 10, sortBy = 'createdAt', sortType = 'desc', query } = req.query;

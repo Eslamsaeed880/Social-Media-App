@@ -13,47 +13,58 @@ import {
 import isAuth, { isLoggedIn } from '../middlewares/isAuth.js';
 import cache from '../middlewares/cache.js';
 import { upload } from '../middlewares/multer.js';
+import {
+    validateRequest,
+    postVideoSchema,
+    updateVideoSchema,
+    getAllVideosSchema,
+    getTrendingVideosSchema,
+    getVideoByIdSchema,
+    videoIdParamSchema,
+    getMyVideosSchema,
+    getRecommendedVideosSchema,
+} from '../validation/videoValidation.js';
 
 const router = express.Router();
 const VIDEO_CACHE_TTL = Number(process.env.VIDEO_CACHE_TTL) || 60;
 
-router.get("/", cache({ 
+router.get("/", validateRequest(getAllVideosSchema, 'query'), cache({ 
     prefix: 'videos', 
     scope: 'all', 
     ttlSeconds: VIDEO_CACHE_TTL 
 }), getAllVideos);
 
-router.get("/trending", cache({ 
+router.get("/trending", validateRequest(getTrendingVideosSchema, 'query'), cache({ 
     prefix: 'videos', 
     scope: 'trending', 
     ttlSeconds: VIDEO_CACHE_TTL 
 }), getTrendingVideos);
 
-router.post("/", isAuth, upload.fields([
+router.post("/", isAuth, validateRequest(postVideoSchema, 'body'), upload.fields([
     { name: 'videoFile', maxCount: 1 },
     { name: 'thumbnail', maxCount: 1 }
 ]), postVideo);
 
-router.get("/my-videos", isAuth, cache({
+router.get("/my-videos", isAuth, validateRequest(getMyVideosSchema, 'query'), cache({
     prefix: 'videos',
     scope: 'my-videos',
     ttlSeconds: VIDEO_CACHE_TTL,
     includeUser: true,
 }), getMyVideos);
 
-router.get("/recommendations", isAuth, cache({
+router.get("/recommendations", isAuth, validateRequest(getRecommendedVideosSchema, 'query'), cache({
     prefix: 'videos',
     scope: 'recommendations',
     ttlSeconds: VIDEO_CACHE_TTL,
     includeUser: true,
 }), getRecommendedVideos);
 
-router.get("/:id", isLoggedIn, getVideoById);
+router.get("/:id", validateRequest(getVideoByIdSchema, 'params'), isLoggedIn, getVideoById);
 
-router.put("/:id", isAuth, updateVideo);
+router.put("/:id", isAuth, validateRequest(videoIdParamSchema, 'params'), validateRequest(updateVideoSchema, 'body'), updateVideo);
 
-router.patch("/:id", isAuth, togglePublishVideo);
+router.patch("/:id", isAuth, validateRequest(videoIdParamSchema, 'params'), togglePublishVideo);
 
-router.delete("/:id", isAuth, deleteVideo);
+router.delete("/:id", isAuth, validateRequest(videoIdParamSchema, 'params'), deleteVideo);
 
 export default router;
