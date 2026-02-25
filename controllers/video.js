@@ -15,8 +15,8 @@ import crypto from 'crypto';
 
 const VIDEO_CACHE_PREFIX = 'videos';
 
-const invalidateVideoCaches = async () => {
-    await invalidateCacheByPrefixes([`${VIDEO_CACHE_PREFIX}:`]);
+const invalidateVideoCaches = async (prefix) => {
+    await invalidateCacheByPrefixes(`${VIDEO_CACHE_PREFIX}:${prefix || ''}`);
 };
 
 const notifySubscribersForPublishedVideo = async ({ channelId, videoId, videoTitle, publisherUsername }) => {
@@ -403,6 +403,7 @@ export const getVideoById = async (req, res, next) => {
 
         if(req.user) {
             await addToWatchHistory(req.user.id, video._id);
+            await invalidateCacheByPrefixes([`watch-history:all:${req.user.id}:`]);
         }
 
         video.views += 1;

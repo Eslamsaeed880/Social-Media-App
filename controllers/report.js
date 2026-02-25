@@ -33,7 +33,7 @@ export const reportContent = async (req, res, next) => {
 
         await report.save();
 
-        await invalidateCacheByPrefixes([`admin:reports`, `reports:all:${req.user.id}:`]);
+        await invalidateCacheByPrefixes([`reports:all:${req.user.id}:`]);
 
         return res.status(201).json(new APIResponse(201, report, 'Content reported successfully'));
     } catch (error) {

@@ -41,9 +41,13 @@ router.patch("/confirm-reset-password", confirmResetPassword);
 router.patch("/change-password", isAuth, changePassword);
 
 router.get("/@:username", cache({
-    prefix: 'user',
+    prefix: 'users',
     scope: 'profile',
     ttlSeconds: USER_CACHE_TTL,
+    keyBuilder: ({ req, buildCacheKey }) => buildCacheKey(
+        `users:profile:${req.params.username}`,
+        { url: req.originalUrl || req.url }
+    ),
     includeUser: false,
 }), getUserProfile);
 

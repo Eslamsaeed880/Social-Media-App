@@ -10,11 +10,14 @@ const REPORT_CACHE_PREFIX = 'reports';
 const USER_CACHE_PREFIX = 'users';
 const VIDEO_CACHE_PREFIX = 'videos';
 const COMMENT_CACHE_PREFIX = 'comments';
-const ADMIN_CACHE_PREFIX = 'admin';
 
-const invalidateAdminCache = (scope) => {
-    invalidateCacheByPrefixes([`${ADMIN_CACHE_PREFIX}:${scope}:`]);
-}
+const invalidateCaches = async (prefixes = []) => {
+    if (!prefixes.length) {
+        return;
+    }
+
+    await invalidateCacheByPrefixes(prefixes);
+};
 
 // @Desc: Get all reports (admin only)
 // @Route: GET /api/v1/admin/reports?page=1&limit=10&status=pending  
@@ -69,7 +72,10 @@ export const updateReportStatus = async (req, res, next) => {
         report.reviewNotes = reviewNotes || report.reviewNotes;
 
         await report.save();
-        await invalidateAdminCache('reports');
+        await invalidateCaches([
+            `${REPORT_CACHE_PREFIX}:all:${String(report.reportedBy)}:`,
+            `${REPORT_CACHE_PREFIX}:report:${String(report._id)}:${String(report.reportedBy)}:`,
+        ]);
 
         return res.status(200).json(new APIResponse(200, report, 'Report status updated successfully'));
 
@@ -178,8 +184,11 @@ export const deleteUser = async (req, res, next) => {
 
         await user.deleteOne();
 
-        await invalidateAdminCache('users');
 
+        await invalidateCaches([
+            `${USER_CACHE_PREFIX}:profile:${user.username}:`,
+            `${VIDEO_CACHE_PREFIX}:`,
+        ]);
         return res.status(200).json(new APIResponse(200, {}, 'User deleted successfully'));
 
     } catch (error) {
@@ -309,8 +318,9 @@ export const deleteVideo = async (req, res, next) => {
         }
 
         await video.deleteOne();
-
-        await invalidateAdminCache('videos');
+        await invalidateCaches([
+            `${VIDEO_CACHE_PREFIX}:`,
+        ]);
 
         return res.status(200).json(new APIResponse(200, {}, 'Video deleted successfully'));
 
@@ -391,8 +401,6 @@ export const deleteComment = async (req, res, next) => {
         }
 
         await comment.deleteOne();
-
-        await invalidateAdminCache('comments');
 
         return res.status(200).json(new APIResponse(200, {}, 'Comment deleted successfully'));
 

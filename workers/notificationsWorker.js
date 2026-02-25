@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import mongoose from 'mongoose';
 import createNotification from '../utils/createNotification.js';
+import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
 
 await mongoose.connect(process.env.MONGODB_URI);
 console.log('Notifications worker connected to MongoDB');
@@ -21,7 +22,12 @@ new Worker(
     }
 
     try {
-      await createNotification(recipientId, senderId, type, content, entityType, entityId);
+      const notification = await createNotification(recipientId, senderId, type, content, entityType, entityId);
+
+      if (notification) {
+        await invalidateCacheByPrefixes([`notifications:all:${String(recipientId)}:`]);
+      }
+
       console.log('Notification created:', job.id);
     } catch (error) {
       console.error('Notification worker error:', job.id, error);

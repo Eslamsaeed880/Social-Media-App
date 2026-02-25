@@ -9,10 +9,10 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
 
-const USER_CACHE_PREFIX = 'user';
+const USER_CACHE_PREFIX = 'users';
 
-const invalidateUserCaches = async (originalUrl) => {
-    await invalidateCacheByPrefixes([`${USER_CACHE_PREFIX}:profile:url=${originalUrl}`]);
+const invalidateUserCaches = async (scope) => {
+    await invalidateCacheByPrefixes([`${USER_CACHE_PREFIX}:${scope}:`]);
 };
 
 // @Desc: Implement user sign-up logic
@@ -180,7 +180,7 @@ export const updateUserProfile = async (req, res, next) => {
             });
 
             await user.save();
-            await invalidateUserCaches(req.originalUrl);
+            await invalidateUserCaches('profile:' + username);
 
             const response = new APIResponse(200, { updatedUser: user }, "User profile updated successfully");
             res.status(response.statusCode).json(response);
@@ -210,7 +210,7 @@ export const updateProfilePic = async (req, res, next) => {
             user.profilePicture.publicId = undefined;
             user.profilePicture.url = undefined;
             await user.save();
-            await invalidateUserCaches(req.originalUrl);
+            await invalidateUserCaches('profile:' + username);
             const response = new APIResponse(200, { updatedUser: user }, "User avatar removed successfully");
             return res.status(response.statusCode).json(response);
         }
@@ -225,7 +225,7 @@ export const updateProfilePic = async (req, res, next) => {
             };
 
             await user.save();
-            await invalidateUserCaches(req.originalUrl);
+            await invalidateUserCaches('profile:' + username);
             const response = new APIResponse(200, { updatedUser: user }, "User avatar updated successfully");
             res.status(response.statusCode).json(response);
         }
@@ -251,7 +251,7 @@ export const updateCover = async (req, res, next) => {
             user.coverImage.publicId = undefined;
             user.coverImage.url = undefined;
             await user.save();
-            await invalidateUserCaches(req.originalUrl);
+            await invalidateUserCaches('profile:' + username);
             const response = new APIResponse(200, { updatedUser: user }, "User cover image removed successfully");
             return res.status(response.statusCode).json(response);
         }
@@ -265,7 +265,7 @@ export const updateCover = async (req, res, next) => {
                 url: uploadedCover.url
             };
             await user.save();
-            await invalidateUserCaches(req.originalUrl);
+            await invalidateUserCaches('profile:' + username);
             const response = new APIResponse(200, { updatedUser: user }, "User cover image updated successfully");
             res.status(response.statusCode).json(response);
         }

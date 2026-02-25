@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon app.js"
+    "start": "nodemon app.js",
+    "reindex:es": "node scripts/reindexElastic.js"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,7 @@
   },
   "homepage": "https://github.com/Eslamsaeed880/Social-Media-App#readme",
   "dependencies": {
+    "@elastic/elasticsearch": "^8.18.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.14.0",
     "cloudinary": "^2.9.0",

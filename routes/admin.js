@@ -16,87 +16,36 @@ import {
     deleteComment
 } from '../controllers/admin.js';
 import isAdmin from '../middlewares/isAdmin.js';
-import cache from '../middlewares/cache.js';
 
 const router = express.Router();
 
 router.use(isAdmin);
 
-router.get('/reports', cache({
-    prefix: 'admin',
-    scope: 'reports',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getAllReports);
+router.get('/reports', getAllReports);
 
-router.get('/reports/:reportId', cache({
-    prefix: 'admin',
-    scope: 'reports',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getReportById); 
+router.get('/reports/:reportId', getReportById); 
 
 router.put('/reports/:reportId', updateReportStatus);
 
-router.get('/users', cache({
-    prefix: 'admin',
-    scope: 'users',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getAllUsers);
+router.get('/users', getAllUsers);
 
-router.get('/users/:userId', cache({
-    prefix: 'admin',
-    scope: 'users',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getUserById);
+router.get('/users/:userId', getUserById);
 
 router.delete('/users/:userId', deleteUser);
 
-router.get('/users/:userId/videos', cache({
-    prefix: 'admin',
-    scope: 'videos',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getVideosByUserId);
+router.get('/users/:userId/videos', getVideosByUserId);
 
-router.get('/users/:userId/comments', cache({
-    prefix: 'admin',
-    scope: 'comments',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getCommentsByUserId);
+router.get('/users/:userId/comments', getCommentsByUserId);
 
-router.get('/videos', cache({
-    prefix: 'admin',
-    scope: 'videos',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getAllVideos);
+router.get('/videos', getAllVideos);
 
-router.get('/videos/:videoId', cache({
-    prefix: 'admin',
-    scope: 'videos',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getVideoById);
+router.get('/videos/:videoId', getVideoById);
 
 router.delete('/videos/:videoId', deleteVideo);
 
-router.get('/comments', cache({
-    prefix: 'admin',
-    scope: 'comments',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getAllComments);
+router.get('/comments', getAllComments);
 
-router.get('/comments/:commentId', cache({
-    prefix: 'admin',
-    scope: 'comments',
-    ttlSeconds: 60,
-    includeUser: false,
-}), getCommentById);
+router.get('/comments/:commentId', getCommentById);
 
 router.delete('/comments/:commentId', deleteComment);
 
