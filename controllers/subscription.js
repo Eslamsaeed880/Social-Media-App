@@ -1,10 +1,10 @@
 import APIError from "../utils/APIError.js";
 import APIResponse from "../utils/APIResponse.js";
 import Subscription from "../models/subscription.js";
-import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
 import User from "../models/user.js";
-import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import crypto from 'crypto';
+import { enqueueNotificationEvent } from "../queues/notificationsQueue.js";
+import { enqueueAnalyticsEvent } from "../queues/analyticsQueue.js";
 import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
 
 // @Desc: Subscribe to a channel

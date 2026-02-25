@@ -7,11 +7,11 @@ import Subscription from "../models/subscription.js";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary.js";
 import VideoCategory from "../models/videoCategory.js";
 import WatchHistory from "../models/watchHistory.js";
-import { addToWatchHistory } from "../utils/addToWatchHistory.js";
-import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
-import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
-import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
 import crypto from 'crypto';
+import { addToWatchHistory } from "../utils/addToWatchHistory.js";
+import { enqueueAnalyticsEvent } from "../queues/analyticsQueue.js";
+import { enqueueNotificationEvent } from "../queues/notificationsQueue.js";
+import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
 
 const VIDEO_CACHE_PREFIX = 'videos';
 

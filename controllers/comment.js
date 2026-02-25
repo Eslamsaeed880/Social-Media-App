@@ -3,10 +3,10 @@ import APIResponse from "../utils/APIResponse.js";
 import Comment from "../models/comment.js";
 import Video from "../models/video.js";
 import mongoose from "mongoose"
-import { enqueueNotificationEvent } from "../utils/notificationsQueue.js";
 import User from "../models/user.js";
-import { enqueueAnalyticsEvent } from "../utils/analyticsQueue.js";
 import crypto from 'crypto';
+import { enqueueNotificationEvent } from "../queues/notificationsQueue.js";
+import { enqueueAnalyticsEvent } from "../queues/analyticsQueue.js";
 
 // @Desc: Create a comment on a video
 // @Route: POST /api/v1/comments/698fa551362e5de95b8a691c

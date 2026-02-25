@@ -3,10 +3,10 @@ import APIResponse from '../utils/APIResponse.js';
 import Comment from '../models/comment.js';
 import Like from '../models/like.js';
 import Video from '../models/video.js';
-import { enqueueNotificationEvent } from '../utils/notificationsQueue.js';
 import User from '../models/user.js';
-import { enqueueAnalyticsEvent } from '../utils/analyticsQueue.js';
 import crypto from 'crypto';
+import { enqueueNotificationEvent } from '../queues/notificationsQueue.js';
+import { enqueueAnalyticsEvent } from '../queues/analyticsQueue.js';
 
 // @Desc: Like a video or comment
 // Route: POST /api/v1/likes
