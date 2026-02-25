@@ -22,6 +22,7 @@ router.get("/", cache({
     scope: 'all', 
     ttlSeconds: VIDEO_CACHE_TTL 
 }), getAllVideos);
+
 router.get("/trending", cache({ 
     prefix: 'videos', 
     scope: 'trending', 
