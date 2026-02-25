@@ -10,7 +10,6 @@ import {
 } from '../controllers/comment.js';
 import isAuth from '../middlewares/isAuth.js';
 import {
-    validateRequest,
     createCommentSchema,
     replyToCommentSchema,
     updateCommentSchema,
@@ -18,6 +17,7 @@ import {
     commentIdParamSchema,
     paginationQuerySchema,
 } from '../validation/commentValidation.js';
+import { validateRequest } from '../validation/validateRequest.js';
 
 const router = express.Router();
 

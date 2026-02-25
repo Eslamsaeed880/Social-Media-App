@@ -16,10 +16,6 @@ export const likeVideo = async (req, res, next) => {
         const { videoId } = req.body;
         const { user } = req;
 
-        if (!videoId) {
-            return next(new APIError(400, 'Video ID is required'));
-        }
-
         const video = await Video.findById(videoId);
 
         if (!video) {
@@ -73,8 +69,8 @@ export const likeVideo = async (req, res, next) => {
         return res.status(201).json(new APIResponse(201, 'Video liked successfully', like));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Error liking video:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -85,10 +81,6 @@ export const unlikeVideo = async (req, res, next) => {
     try {
         const { videoId } = req.body;
         const { user } = req;
-
-        if (!videoId) {
-            return next(new APIError(400, 'Video ID is required'));
-        }
 
         const video = await Video.findById(videoId);
 
@@ -123,8 +115,8 @@ export const unlikeVideo = async (req, res, next) => {
         return res.status(200).json(new APIResponse(200, 'Video unliked successfully'));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Error unliking video:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -135,10 +127,6 @@ export const likeComment = async (req, res, next) => {
     try {
         const { commentId } = req.body;
         const { user } = req;
-
-        if (!commentId) {
-            return next(new APIError(400, 'Comment ID is required'));
-        }
 
         const comment = await Comment.findById(commentId);
 
@@ -179,8 +167,8 @@ export const likeComment = async (req, res, next) => {
         return res.status(201).json(new APIResponse(201, 'Comment liked successfully', like));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Error liking comment:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -191,10 +179,6 @@ export const unlikeComment = async (req, res, next) => {
     try {
         const { commentId } = req.body;
         const { user } = req;
-
-        if (!commentId) {
-            return next(new APIError(400, 'Comment ID is required'));
-        }
 
         const comment = await Comment.findById(commentId);
 
@@ -216,7 +200,7 @@ export const unlikeComment = async (req, res, next) => {
         return res.status(200).json(new APIResponse(200, 'Comment unliked successfully'));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Error unliking comment:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }

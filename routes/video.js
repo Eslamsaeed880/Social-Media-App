@@ -14,7 +14,6 @@ import isAuth, { isLoggedIn } from '../middlewares/isAuth.js';
 import cache from '../middlewares/cache.js';
 import { upload } from '../middlewares/multer.js';
 import {
-    validateRequest,
     postVideoSchema,
     updateVideoSchema,
     getAllVideosSchema,
@@ -24,6 +23,7 @@ import {
     getMyVideosSchema,
     getRecommendedVideosSchema,
 } from '../validation/videoValidation.js';
+import { validateRequest } from '../validation/validateRequest.js';
 
 const router = express.Router();
 const VIDEO_CACHE_TTL = Number(process.env.VIDEO_CACHE_TTL) || 60;

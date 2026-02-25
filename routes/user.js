@@ -17,7 +17,6 @@ import isAuth from "../middlewares/isAuth.js";
 import passport from "passport";
 import cache from "../middlewares/cache.js";
 import {
-    validateRequest,
     signUpSchema,
     loginSchema,
     updateUserProfileSchema,
@@ -27,6 +26,7 @@ import {
     resetTokenQuerySchema,
     changePasswordSchema,
 } from "../validation/userValidation.js";
+import { validateRequest } from "../validation/validateRequest.js";
 
 const router = express.Router();
 const USER_CACHE_TTL = Number(process.env.USER_CACHE_TTL) || 60;
