@@ -1,13 +1,13 @@
 import User from '../models/user.js';
 import APIError from '../utils/APIError.js';
 import APIResponse from '../utils/APIResponse.js';
-import { uploadToCloudinary } from '../utils/cloudinary.js';
 import config from '../config/config.js';
-import transporter from '../config/transporter.js';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
+import { enqueueEmailEvent } from '../queues/emailQueue.js';
+import { enqueueMediaJob } from '../queues/mediaQueue.js';
 
 const USER_CACHE_PREFIX = 'users';
 
@@ -27,34 +27,6 @@ export const signUp = async (req, res, next) => {
             return next(new APIError(409, "User with given email or username already exists"));
         }
 
-        let profilePicture = undefined;
-        let coverImage = undefined;
-
-        // Handle avatar upload
-        if (req.files && req.files['avatar'] && req.files['avatar'][0]) {
-            const avatarPath = req.files['avatar'][0].path;
-            const uploadedAvatar = await uploadToCloudinary(avatarPath, 'avatars');
-            if (uploadedAvatar && uploadedAvatar.url && uploadedAvatar.public_id) {
-                profilePicture = {
-                    publicId: uploadedAvatar.public_id,
-                    url: uploadedAvatar.url
-                };
-            }
-        }
-
-        // Handle cover upload
-        if (req.files && req.files['cover'] && req.files['cover'][0]) {
-            const coverPath = req.files['cover'][0].path;
-            const uploadedCover = await uploadToCloudinary(coverPath, 'covers');
-            if (uploadedCover && uploadedCover.url && uploadedCover.public_id) {
-                coverImage = {
-                    publicId: uploadedCover.public_id,
-                    url: uploadedCover.url
-                };
-            }
-        }
-
-        // Only assign profilePicture/coverImage if they are defined and not empty
         const userData = {
             fullName,
             username,
@@ -62,27 +34,40 @@ export const signUp = async (req, res, next) => {
             password,
         };
 
-        if (profilePicture && profilePicture.publicId && profilePicture.url) {
-            userData.profilePicture = profilePicture;
-        } else {
-            delete userData.profilePicture;
-        }
-        if (coverImage && coverImage.publicId && coverImage.url) {
-            userData.coverImage = coverImage;
-        } else {
-            delete userData.coverImage;
-        }
-
-        await transporter.sendMail({
-            to: userData.email,
-            from: config.mail.sender,
-            subject: 'Welcome to Our Social Media App!',
-            html: `<h2>Hi ${username},</h2><br><br>Thank you for signing up for our social media app! We're excited to have you on board.<br><br>Best regards,<br>The Team`
-        });
-
         const newUser = new User(userData);
 
         await newUser.save();
+
+        if (req.files?.avatar?.[0]?.path) {
+            await enqueueMediaJob({
+                eventId: crypto.randomUUID(),
+                type: 'update-profile-pic',
+                payload: {
+                    userId: newUser._id.toString(),
+                    username,
+                    filePath: req.files.avatar[0].path,
+                },
+            });
+        }
+
+        if (req.files?.cover?.[0]?.path) {
+            await enqueueMediaJob({
+                eventId: crypto.randomUUID(),
+                type: 'update-cover',
+                payload: {
+                    userId: newUser._id.toString(),
+                    username,
+                    filePath: req.files.cover[0].path,
+                },
+            });
+        }
+
+        await enqueueEmailEvent({
+            eventId: crypto.randomUUID(),
+            to: userData.email,
+            subject: 'Welcome to Our Social Media App!',
+            html: `<h2>Hi ${username},</h2><br><br>Thank you for signing up for our social media app! We're excited to have you on board.<br><br>Best regards,<br>The Team`,
+        });
 
         const response = new APIResponse(201, { createdUser: newUser }, "User registered successfully");
         res.status(response.statusCode).json(response);
@@ -215,20 +200,18 @@ export const updateProfilePic = async (req, res, next) => {
             return res.status(response.statusCode).json(response);
         }
     
-        const avatarPath = req.file.path;
-        const uploadedAvatar = await uploadToCloudinary(avatarPath, 'avatars');
-    
-        if (uploadedAvatar && uploadedAvatar.url && uploadedAvatar.public_id) {
-            user.profilePicture = {
-                publicId: uploadedAvatar.public_id,
-                url: uploadedAvatar.url
-            };
+        const job = await enqueueMediaJob({
+            eventId: crypto.randomUUID(),
+            type: 'update-profile-pic',
+            payload: {
+                userId: user._id.toString(),
+                username,
+                filePath: req.file.path,
+            },
+        });
 
-            await user.save();
-            await invalidateUserCaches('profile:' + username);
-            const response = new APIResponse(200, { updatedUser: user }, "User avatar updated successfully");
-            res.status(response.statusCode).json(response);
-        }
+        const response = new APIResponse(202, { jobId: job?.id || null }, "User avatar update queued");
+        res.status(response.statusCode).json(response);
     } catch (error) {
         return next(new APIError(500, "Failed to update user avatar", { errors: error.message }));
     }
@@ -256,19 +239,18 @@ export const updateCover = async (req, res, next) => {
             return res.status(response.statusCode).json(response);
         }
     
-        const coverPath = req.file.path;
-        const uploadedCover = await uploadToCloudinary(coverPath, 'covers');
-    
-        if (uploadedCover && uploadedCover.url && uploadedCover.public_id) {
-            user.coverImage = {
-                publicId: uploadedCover.public_id,
-                url: uploadedCover.url
-            };
-            await user.save();
-            await invalidateUserCaches('profile:' + username);
-            const response = new APIResponse(200, { updatedUser: user }, "User cover image updated successfully");
-            res.status(response.statusCode).json(response);
-        }
+        const job = await enqueueMediaJob({
+            eventId: crypto.randomUUID(),
+            type: 'update-cover',
+            payload: {
+                userId: user._id.toString(),
+                username,
+                filePath: req.file.path,
+            },
+        });
+
+        const response = new APIResponse(202, { jobId: job?.id || null }, "User cover image update queued");
+        res.status(response.statusCode).json(response);
 
     } catch (error) {
         return next(new APIError(500, "Failed to update user cover image", { errors: error.message }));
@@ -306,9 +288,9 @@ export const resetPassword = async (req, res, next) => {
 
         const resetLink = `${process.env.FRONTEND_URL}/confirm-reset-password?token=${resetToken}`;
 
-        await transporter.sendMail({
+        await enqueueEmailEvent({
+            eventId: crypto.randomUUID(),
             to: email,
-            from: config.mail.sender,
             subject: 'Password Reset Request',
             html: `
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
@@ -345,11 +327,7 @@ export const resetPassword = async (req, res, next) => {
                         This email was sent from our e-commerce platform. Please do not reply to this email.
                     </p>
                 </div>
-            `
-        }, (err, info) => {
-            if(!err) {
-                console.log("Reset Email Sent Successfully");
-            }
+            `,
         });
 
         res.status(200).json({
@@ -383,9 +361,9 @@ export const confirmResetPassword = async (req, res, next) => {
         user.resetTokenExpiry = null;
         await user.save();
 
-        await transporter.sendMail({
+        await enqueueEmailEvent({
+            eventId: crypto.randomUUID(),
             to: user.email,
-            from: config.mail.sender,
             subject: 'Password Reset Successful',
             html: `
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
@@ -396,7 +374,7 @@ export const confirmResetPassword = async (req, res, next) => {
                         If you didn't make this change, please contact our support team immediately.
                     </p>
                 </div>
-            `
+            `,
         });
 
         const response = new APIResponse(200, null, "Password reset successful");

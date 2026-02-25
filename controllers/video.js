@@ -12,6 +12,7 @@ import { addToWatchHistory } from "../utils/addToWatchHistory.js";
 import { enqueueAnalyticsEvent } from "../queues/analyticsQueue.js";
 import { enqueueNotificationEvent } from "../queues/notificationsQueue.js";
 import { invalidateCacheByPrefixes } from "../utils/redisCache.js";
+import { enqueueMediaJob } from "../queues/mediaQueue.js";
 
 const VIDEO_CACHE_PREFIX = 'videos';
 
@@ -75,25 +76,6 @@ export const postVideo = async (req, res, next) => {
         const videoLocalPath = req.files.videoFile[0].path;
         const thumbnailLocalPath = req.files.thumbnail[0].path;
 
-        const videoUpload = await uploadToCloudinary(
-            videoLocalPath,
-            "videos"
-        );
-
-        if(!videoUpload) {
-            return next(new APIError(500, 'Failed to upload video'));
-        }
-
-        const thumbnailUpload = await uploadToCloudinary(
-            thumbnailLocalPath,
-            "thumbnails"
-        );
-
-        if(!thumbnailUpload) {
-            await deleteFromCloudinary(videoUpload.public_id);
-            return next(new APIError(500, 'Failed to upload thumbnail'));
-        }
-
         let formattedTags = [];
         if (tags) {
             try {
@@ -102,49 +84,28 @@ export const postVideo = async (req, res, next) => {
                 formattedTags = tags.split(',').map(tag => tag.trim());
             }
         }
-
-        const video = await Video.create({
-            title,
-            description,
-            videoFile: {
-                publicId: videoUpload.public_id,
-                url: videoUpload.url,
+        const job = await enqueueMediaJob({
+            eventId: crypto.randomUUID(),
+            type: 'upload-video',
+            payload: {
+                userId: req.user.id,
+                title,
+                description,
+                tags: formattedTags,
+                category: cat?.name || null,
+                ageRestriction,
+                isPublished,
+                videoLocalPath,
+                thumbnailLocalPath,
             },
-            thumbnail: {
-                publicId: thumbnailUpload.public_id,
-                url: thumbnailUpload.url,
-            },
-            duration: videoUpload.duration,
-            publisherId: req.user.id,
-            category: cat.name,
-            tags: formattedTags,
-            ageRestriction,
-            isPublished,
         });
 
-        await invalidateVideoCaches();
-
-        if (video.isPublished) {
-            try {
-                const publisher = await User.findById(req.user.id).select('username').lean();
-
-                await notifySubscribersForPublishedVideo({
-                    channelId: req.user.id,
-                    videoId: video._id,
-                    videoTitle: video.title,
-                    publisherUsername: publisher?.username || 'A channel',
-                });
-            } catch (notificationError) {
-                console.error('Publish notification event failed:', notificationError);
-            }
-        }
-
-        return res.status(201)
+        return res.status(202)
             .json(
                 new APIResponse(
-                    201,
-                    { video },
-                    "Video uploaded successfully"
+                    202,
+                    { jobId: job?.id || null },
+                    "Video upload queued"
                 )
             );
 

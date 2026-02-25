@@ -92,6 +92,44 @@ services:
       - social-media-network
     command: node workers/notificationsWorker.js
 
+  email-worker:
+    build: .
+    container_name: social-media-email-worker
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/build
+      - /build/node_modules
+    networks:
+      - social-media-network
+    command: node workers/emailWorker.js
+
+  media-worker:
+    build: .
+    container_name: social-media-media-worker
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=development
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./:/build
+      - /build/node_modules
+    networks:
+      - social-media-network
+    command: node workers/mediaWorker.js
+
 volumes:
   mongo_data:
   redis_data:
