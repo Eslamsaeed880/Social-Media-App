@@ -8,10 +8,17 @@ import {
 } from '../controllers/subscription.js';
 import isAuth from '../middlewares/isAuth.js';
 import cache from '../middlewares/cache.js';
+import { validateRequest } from '../validation/validateRequest.js';
+import {
+    subscribeSchema,
+    unsubscribeSchema,
+    toggleNotificationsSchema,
+    subscriptionPaginationQuerySchema,
+} from '../validation/subscriptionValidation.js';
 
 const router = express.Router();
 
-router.get("/", isAuth, cache({
+router.get("/", isAuth, validateRequest(subscriptionPaginationQuerySchema, 'query'), cache({
     prefix: 'subscriptions',
     scope: 'user-subscriptions',
     ttlSeconds: 60,
@@ -21,11 +28,11 @@ router.get("/", isAuth, cache({
     ),
 }), getUserSubscriptions)
 
-router.post("/", isAuth, subscribeToChannel);
+router.post("/", isAuth, validateRequest(subscribeSchema, 'body'), subscribeToChannel);
 
-router.delete("/", isAuth, unsubscribeFromChannel);
+router.delete("/", isAuth, validateRequest(unsubscribeSchema, 'body'), unsubscribeFromChannel);
 
-router.get("/subscribers", isAuth, cache({
+router.get("/subscribers", isAuth, validateRequest(subscriptionPaginationQuerySchema, 'query'), cache({
     prefix: 'subscriptions',
     scope: 'subscribers',
     ttlSeconds: 60,
@@ -35,6 +42,6 @@ router.get("/subscribers", isAuth, cache({
     ),
 }), getChannelSubscribers);
 
-router.patch("/notifications", isAuth, toggleNotifications);
+router.patch("/notifications", isAuth, validateRequest(toggleNotificationsSchema, 'body'), toggleNotifications);
 
 export default router;

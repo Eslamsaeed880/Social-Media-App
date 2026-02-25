@@ -14,7 +14,7 @@ const auth = async (req, res, next, optional) => {
     try {
         decodedToken = await jwt.verify(token, config.jwtSecretKey);
     } catch (err) {
-        return next(optional ? null : new APIError(500, 'Token verification failed', { errors: err.message }));
+        return next(optional ? null : new APIError(401, 'Token verification failed', { errors: err.message }));
     }
 
     if(decodedToken.exp * 1000 < Date.now()) {
