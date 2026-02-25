@@ -73,7 +73,8 @@ export const signUp = async (req, res, next) => {
         res.status(response.statusCode).json(response);
 
     } catch (error) {
-        throw new APIError(500, error.message);
+        console.error('Sign up error:', error);
+        return next(new APIError(500, error.message || 'Failed to create user'));
     }
 }
 
@@ -82,24 +83,26 @@ export const signUp = async (req, res, next) => {
 // Access: Public
 export const login = async (req, res, next) => {
     try {
-        const user = req.body;
+        const { email, password } = req.body;
         
-        const existingUser = await User.findOne({ email: user.email });
-    
-        const isMatch = await existingUser.comparePassword(user.password);
-    
-        if(isMatch) {
-            const token = existingUser.generateToken();
-            const response = new APIResponse(200, { user: existingUser, token }, "Login successful");
-
-            res
-                .status(response.statusCode)
-                .json(response);
-        } else {
+        const existingUser = await User.findOne({ email });
+        
+        if (!existingUser) {
             return next(new APIError(401, "Invalid email or password"));
         }
+    
+        const isMatch = await existingUser.comparePassword(password);
+    
+        if (!isMatch) {
+            return next(new APIError(401, "Invalid email or password"));
+        }
+        
+        const token = existingUser.generateToken();
+        const response = new APIResponse(200, { user: existingUser, token }, "Login successful");
 
+        res.status(response.statusCode).json(response);
     } catch (error) {
+        console.error('Login error:', error);
         return next(new APIError(401, "Invalid email or password"));
     }
 }
@@ -148,32 +151,42 @@ export const updateUserProfile = async (req, res, next) => {
     try {
         const { username } = req.params;
         const user = await User.findOne({ username }).select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos -profilePicture -coverImage');
-        if (user._id.toString() === req.user.id) {
-            const fields = [
-                "fullName",
-                "bio",
-                "location",
-                "gender",
-                "birthDay",
-                "socialLinks",
-            ];
-
-            fields.forEach(field => {
-                if (req.body[field] !== undefined) {
-                    user[field] = req.body[field];
-                }
-            });
-
-            await user.save();
-            await invalidateUserCaches('profile:' + username);
-
-            const response = new APIResponse(200, { updatedUser: user }, "User profile updated successfully");
-            res.status(response.statusCode).json(response);
-        } else {
+        
+        if (!user) {
+            return next(new APIError(404, 'User not found'));
+        }
+        
+        if (user._id.toString() !== req.user.id) {
             return next(new APIError(403, "Unauthorized to update this profile"));
         }
+        
+        if (!req.body || Object.keys(req.body).length === 0) {
+            return next(new APIError(400, 'No fields provided to update'));
+        }
+
+        const fields = [
+            "fullName",
+            "bio",
+            "location",
+            "gender",
+            "birthDay",
+            "socialLinks",
+        ];
+
+        fields.forEach(field => {
+            if (req.body.hasOwnProperty(field)) {
+                user[field] = req.body[field];
+            }
+        });
+
+        await user.save();
+        await invalidateUserCaches('profile:' + username);
+
+        const response = new APIResponse(200, { updatedUser: user }, "User profile updated successfully");
+        res.status(response.statusCode).json(response);
     } catch (error) {
-        return next(new APIError(500, "Failed to update user profile", { errors: error.message }));
+        console.error('Update user profile error:', error);
+        return next(new APIError(500, error.message || "Failed to update user profile"));
     }
 }
 
@@ -186,6 +199,10 @@ export const updateProfilePic = async (req, res, next) => {
         const user = await User
             .findOne({ username })
             .select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos');
+    
+        if (!user) {
+            return next(new APIError(404, "User not found"));
+        }
     
         if (user._id.toString() !== req.user.id) {
             return next(new APIError(403, "Unauthorized to update this profile"));
@@ -213,7 +230,8 @@ export const updateProfilePic = async (req, res, next) => {
         const response = new APIResponse(202, { jobId: job?.id || null }, "User avatar update queued");
         res.status(response.statusCode).json(response);
     } catch (error) {
-        return next(new APIError(500, "Failed to update user avatar", { errors: error.message }));
+        console.error('Update profile picture error:', error);
+        return next(new APIError(500, error.message || "Failed to update user avatar"));
     }
 }
 
@@ -251,9 +269,9 @@ export const updateCover = async (req, res, next) => {
 
         const response = new APIResponse(202, { jobId: job?.id || null }, "User cover image update queued");
         res.status(response.statusCode).json(response);
-
     } catch (error) {
-        return next(new APIError(500, "Failed to update user cover image", { errors: error.message }));
+        console.error('Update cover image error:', error);
+        return next(new APIError(500, error.message || "Failed to update user cover image"));
     }
 }
 
@@ -264,9 +282,15 @@ export const getUserProfile = async (req, res, next) => {
     try {
         const { username } = req.params;
         const user = await User.findOne({ username }).lean().select('-password -email -resetToken -__v -resetTokenExpiry -authProvider -role -watchedVideos');
+        
+        if (!user) {
+            return next(new APIError(404, 'User not found'));
+        }
+        
         return res.status(200).json(new APIResponse(200, { user }, "User profile retrieved successfully"));
     } catch (error) {
-        next(error);
+        console.error('Get user profile error:', error);
+        next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -278,6 +302,10 @@ export const resetPassword = async (req, res, next) => {
     try {
         const { email } = req.body;
         const user = await User.findOne({ email });
+        
+        if (!user) {
+            return next(new APIError(404, 'User with this email does not exist'));
+        }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
 
@@ -333,10 +361,9 @@ export const resetPassword = async (req, res, next) => {
         res.status(200).json({
             message: "Password reset email sent successfully. Please check your inbox."
         });
-
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, "Failed to process password reset request", { errors: error.message }));
+        console.error('Password reset error:', error);
+        return next(new APIError(500, error.message || "Failed to process password reset request"));
     }
 }
 
@@ -352,6 +379,10 @@ export const confirmResetPassword = async (req, res, next) => {
             resetToken: token,
             resetTokenExpiry: { $gt: new Date() } 
         });
+        
+        if (!user) {
+            return next(new APIError(400, 'Invalid or expired reset token'));
+        }
 
         const saltRounds = parseInt(config.bcryptSaltRounds);
         const hashedPassword = await bcrypt.hash(password, saltRounds);
@@ -379,10 +410,9 @@ export const confirmResetPassword = async (req, res, next) => {
 
         const response = new APIResponse(200, null, "Password reset successful");
         res.status(response.statusCode).json(response);
-
     } catch (err) {
-        console.log(err);
-        return next(new APIError(500, "Failed to reset password", { errors: err.message }));
+        console.error('Confirm reset password error:', err);
+        return next(new APIError(500, err.message || "Failed to reset password"));
     }
 }
 
@@ -394,8 +424,13 @@ export const changePassword = async (req, res, next) => {
         const { currentPassword, newPassword } = req.body;
         const userId = req.user.id;
         const user = await User.findById(userId);
+        
+        if (!user) {
+            return next(new APIError(404, 'User not found'));
+        }
+        
         const isMatch = await user.comparePassword(currentPassword);
-        if(!isMatch) {
+        if (!isMatch) {
             return next(new APIError(400, "Current password is incorrect"));
         }
         
@@ -406,8 +441,8 @@ export const changePassword = async (req, res, next) => {
         await user.save();
         const response = new APIResponse(200, null, "Password changed successfully");
         res.status(response.statusCode).json(response);
-        
     } catch (error) {
-        next(error);
+        console.error('Change password error:', error);
+        next(new APIError(500, error.message || 'Server error'));
     }
 }
