@@ -72,6 +72,7 @@ export const subscribeToChannel = async (req, res, next) => {
                 eventId: crypto.randomUUID(),
                 type: 'SUBSCRIBER_ADDED',
                 channelId,
+                userId: user.id,
             });
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);
@@ -113,6 +114,7 @@ export const unsubscribeFromChannel = async (req, res, next) => {
                 eventId: crypto.randomUUID(),
                 type: 'SUBSCRIBER_REMOVED',
                 channelId,
+                userId: user.id,
             });
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);

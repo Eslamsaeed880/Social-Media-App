@@ -57,11 +57,15 @@ export const likeVideo = async (req, res, next) => {
         }
 
         try {
-            await enqueueAnalyticsEvent({
+            const analyticsPayload = {
                 eventId: crypto.randomUUID(),
                 type: 'VIDEO_LIKED',
                 channelId: video.publisherId,
-            });
+                videoId: video._id,
+                userId: user.id,
+            };
+
+            await enqueueAnalyticsEvent(analyticsPayload);
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);
         }
@@ -108,7 +112,10 @@ export const unlikeVideo = async (req, res, next) => {
                 eventId: crypto.randomUUID(),
                 type: 'VIDEO_UNLIKED',
                 channelId: video.publisherId,
+                videoId: video._id,
+                userId: user.id,
             });
+            
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);
         }

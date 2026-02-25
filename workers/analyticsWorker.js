@@ -2,6 +2,7 @@ import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import mongoose from 'mongoose';
 import ChannelAnalytics from '../models/channelAnalytics.js';
+import createUserInteraction from '../utils/createUserInteraction.js';
 
 await mongoose.connect(process.env.MONGODB_URI);
 console.log('Worker connected to MongoDB');
@@ -44,9 +45,9 @@ const addTopVideoView = (doc, videoId) => {
 new Worker(
     'analytics-queue',
     async (job) => {
-        const { type, channelId, videoId = null, watchTimeMinutes = 0, viewerGender = null } = job.data;
+        const { type, channelId, videoId = null, watchTimeMinutes = 0, viewerGender = null, userId = null } = job.data;
 
-        console.log('Processing job:', job.id, '| Type:', type, '| Channel:', channelId);
+        console.log('Processing job:', job.id, '| Type:', type, '| Channel:', channelId, '| UserId:', userId, '| VideoId:', videoId);
 
         if (!type || !channelId) {
             console.warn('Invalid job data: missing type or channelId');
@@ -72,11 +73,22 @@ new Worker(
                     if (viewerGender === 'male') analytics.genderDistribution.male += 1;
                     if (viewerGender === 'female') analytics.genderDistribution.female += 1;
                     addTopVideoView(analytics, videoId);
+
+                    // Create interaction for logged-in users only
+                    if (userId) {
+                        const viewInteraction = await createUserInteraction(userId, videoId, 'view');
+                    }
                     break;
 
                 case 'VIDEO_LIKED':
                     analytics.totalLikes = clamp(analytics.totalLikes) + 1;
                     daily.likes = clamp(daily.likes) + 1;
+
+                    // Create interaction for logged-in users only
+                    if (userId) {
+                        const likeInteraction = await createUserInteraction(userId, videoId, 'like');
+                    }
+
                     break;
 
                 case 'VIDEO_UNLIKED':
@@ -87,6 +99,12 @@ new Worker(
                 case 'COMMENT_ADDED':
                     analytics.totalComments = clamp(analytics.totalComments) + 1;
                     daily.comments = clamp(daily.comments) + 1;
+
+                    // Create interaction for logged-in users only
+                    if (userId) {
+                        const commentInteraction = await createUserInteraction(userId, videoId, 'comment');
+                    }
+
                     break;
 
                 case 'COMMENT_REMOVED':

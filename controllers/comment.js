@@ -48,12 +48,15 @@ export const createComment = async (req, res, next) => {
         }
 
         try {
-            await enqueueAnalyticsEvent({
+            const analyticsPayload = {
                 eventId: crypto.randomUUID(),
                 type: 'COMMENT_ADDED',
                 channelId: video.publisherId,
                 videoId: video._id,
-            });
+                userId: req.user.id,
+            };
+
+            await enqueueAnalyticsEvent(analyticsPayload);
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);
         }
@@ -120,6 +123,7 @@ export const replyToComment = async (req, res, next) => {
                 type: 'COMMENT_ADDED',
                 channelId: video.publisherId,
                 videoId: video._id,
+                userId: req.user.id,
             });
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);
@@ -195,6 +199,8 @@ export const deleteComment = async (req, res, next) => {
                     eventId: crypto.randomUUID(),
                     type: 'COMMENT_REMOVED',
                     channelId,
+                    videoId: comment.videoId || comment.parentComment,
+                    userId: req.user.id,
                 });
             } catch (analyticsError) {
                 console.error('Analytics event failed:', analyticsError);

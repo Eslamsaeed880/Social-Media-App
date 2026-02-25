@@ -286,14 +286,17 @@ export const getVideoById = async (req, res, next) => {
         await video.save();
 
         try {
-            await enqueueAnalyticsEvent({
+            const analyticsPayload = {
                 eventId: crypto.randomUUID(),
                 type: 'VIDEO_VIEWED',
                 channelId: video.publisherId._id,
                 videoId: video._id,
+                userId: req.user?.id || null,
                 watchTimeMinutes: Number(video.duration) || 0,
                 viewerGender: req.user?.gender || null,
-            });
+            };
+            
+            await enqueueAnalyticsEvent(analyticsPayload);
         } catch (analyticsError) {
             console.error('Analytics event failed:', analyticsError);
         }

@@ -14,14 +14,15 @@ export async function enqueueAnalyticsEvent({
     videoId = null,
     watchTimeMinutes = 0,
     viewerGender = null,
+    userId = null,
 }) {
     if (!eventId || !type || !channelId) return;
 
     try {
-        console.log('Enqueueing analytics event:', { eventId, type, channelId, videoId });
+        console.log('Enqueueing analytics event:', { eventId, type, channelId, videoId, userId });
         const job = await analyticsQueue.add(
             'update-analytics',
-            { eventId, type, channelId, videoId, watchTimeMinutes, viewerGender },
+            { eventId, type, channelId, videoId, watchTimeMinutes, viewerGender, userId },
             {
                 attempts: 5,
                 backoff: { type: 'exponential', delay: 1000 },
