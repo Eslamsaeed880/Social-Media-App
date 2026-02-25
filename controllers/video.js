@@ -11,13 +11,15 @@ import crypto from 'crypto';
 import { addToWatchHistory } from "../utils/addToWatchHistory.js";
 import { enqueueAnalyticsEvent } from "../queues/analyticsQueue.js";
 import { enqueueNotificationEvent } from "../queues/notificationsQueue.js";
-import { buildCacheKey, getCache, invalidateCacheByPrefixes } from "../utils/redisCache.js";
+import { buildCacheKey, getCache, invalidateCacheByPrefixes, setCache } from "../utils/redisCache.js";
 import { enqueueMediaJob } from "../queues/mediaQueue.js";
 import { computeVideoScore } from "../utils/computeVideoScore.js";
+import { computePersonalizedScore } from "../utils/computePersonalizedScore.js";
 
 const VIDEO_CACHE_PREFIX = 'videos';
 const TRENDING_CACHE_PREFIX = 'videos:trending:computed';
 const TRENDING_CACHE_LIMIT = Number(process.env.TRENDING_CACHE_LIMIT) || 50;
+const TRENDING_IDS_CACHE_TTL = Number(process.env.TRENDING_IDS_CACHE_TTL) || 300;
 
 const invalidateVideoCaches = async (prefix) => {
     await invalidateCacheByPrefixes(`${VIDEO_CACHE_PREFIX}:${prefix || ''}`);
@@ -213,6 +215,7 @@ export const getAllVideos = async (req, res, next) => {
 export const getTrendingVideos = async (req, res, next) => {
     try {
         const { category } = req.query;
+        const normalizedCategory = category ? String(category).toLowerCase() : null;
 
         const query = { isPublished: true };
         if (category) {
@@ -231,6 +234,16 @@ export const getTrendingVideos = async (req, res, next) => {
             .sort((a, b) => (b.score || 0) - (a.score || 0))
             .slice(0, TRENDING_CACHE_LIMIT);
 
+        const trendingCacheKey = buildCacheKey(TRENDING_CACHE_PREFIX, {
+            category: normalizedCategory,
+        });
+
+        await setCache(
+            trendingCacheKey,
+            scored.map((video) => video._id.toString()),
+            TRENDING_IDS_CACHE_TTL
+        );
+
         return res.status(200).json(
             new APIResponse(
                 200,
@@ -238,7 +251,7 @@ export const getTrendingVideos = async (req, res, next) => {
                     videos: scored.map(({ score, ...video }) => video),
                     totalResults: scored.length,
                     filters: {
-                        category: category || null,
+                        category: normalizedCategory,
                     },
                 },
                 'Trending videos fetched successfully'
@@ -525,201 +538,111 @@ export const getMyVideos = async (req, res, next) => {
 }
 
 // @Desc: Get personalized video recommendations
-// @route GET /api/v1/videos/recommendations
+// @route GET /api/v1/videos/recommendations?page=1&limit=10&category=tech&allowRewatch=false
 // @Access Private
 export const getRecommendedVideos = async (req, res, next) => {
     try {
-        const { page = 1, limit = 12 } = req.query;
-        const parsedPage = Math.max(parseInt(page, 10) || 1, 1);
-        const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 12, 1), 50);
-        const userId = new mongoose.Types.ObjectId(req.user.id);
+        const { page = 1, limit = 10, category = null, allowRewatch = 'false' } = req.query;
+        const userId = req.user.id;
 
-        const [subscriptions, watchHistory] = await Promise.all([
-            Subscription.find({ subscriberId: userId }).select('channelId').lean(),
-            WatchHistory.aggregate([
-                { $match: { userId } },
-                { $sort: { watchedAt: -1 } },
-                { $limit: 300 },
-                {
-                    $lookup: {
-                        from: 'videos',
-                        localField: 'videoId',
-                        foreignField: '_id',
-                        as: 'video',
-                    }
-                },
-                { $unwind: '$video' },
-                {
-                    $project: {
-                        _id: 0,
-                        watchedAt: 1,
-                        videoId: '$video._id',
-                        category: '$video.category',
-                        publisherId: '$video.publisherId',
-                    }
-                }
-            ]),
-        ]);
+        const rawCategory = category ? String(category).trim().toLowerCase() : null;
+        const normalizedCategory = ['null', 'undefined', 'all', ''].includes(rawCategory) ? null : rawCategory;
+        const canRewatch = String(allowRewatch).toLowerCase() === 'true';
 
-        const subscribedChannelIds = subscriptions.map((item) => item.channelId.toString());
-        const watchedVideoIds = watchHistory.map((item) => item.videoId);
+        const limitValue = String(limit).toLowerCase() === 'all'
+            ? Number.MAX_SAFE_INTEGER
+            : Math.max(1, Number(limit) || 10);
+        const pageValue = Math.max(1, Number(page) || 1);
 
-        const categoryWeights = {};
-        const publisherWeights = {};
-
-        for (const item of watchHistory) {
-            if (item.category) {
-                categoryWeights[item.category] = (categoryWeights[item.category] || 0) + 1;
-            }
-
-            if (item.publisherId) {
-                const publisherKey = item.publisherId.toString();
-                publisherWeights[publisherKey] = (publisherWeights[publisherKey] || 0) + 1;
-            }
-        }
-
-        const preferredCategories = Object.entries(categoryWeights)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 6)
-            .map(([name]) => name);
-
-        const historyPreferredPublishers = Object.entries(publisherWeights)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10)
-            .map(([publisherId]) => new mongoose.Types.ObjectId(publisherId));
-
-        const subscribedObjectIds = subscribedChannelIds.map((id) => new mongoose.Types.ObjectId(id));
-
-        const recommendationMatch = {
-            isPublished: true,
-            publisherId: { $ne: userId },
-        };
-
-        if (watchedVideoIds.length) {
-            recommendationMatch._id = { $nin: watchedVideoIds };
-        }
-
-        const interestOrConditions = [];
-
-        if (subscribedObjectIds.length) {
-            interestOrConditions.push({ publisherId: { $in: subscribedObjectIds } });
-        }
-
-        if (historyPreferredPublishers.length) {
-            interestOrConditions.push({ publisherId: { $in: historyPreferredPublishers } });
-        }
-
-        if (preferredCategories.length) {
-            interestOrConditions.push({ category: { $in: preferredCategories } });
-        }
-
-        const candidateFetchLimit = Math.max(parsedPage * parsedLimit * 6, 120);
-
-        const fetchCandidates = async (match, limitCount) => {
-            return Video.aggregate([
-                { $match: match },
-                { $sort: { createdAt: -1 } },
-                { $limit: limitCount },
-                {
-                    $lookup: {
-                        from: 'users',
-                        localField: 'publisherId',
-                        foreignField: '_id',
-                        as: 'owner',
-                        pipeline: [
-                            {
-                                $project: {
-                                    username: 1,
-                                    fullName: 1,
-                                    avatar: 1,
-                                }
-                            }
-                        ]
-                    }
-                },
-                {
-                    $addFields: {
-                        owner: { $first: '$owner' },
-                    }
-                }
-            ]);
-        };
-
-        const personalizedMatch = interestOrConditions.length
-            ? { ...recommendationMatch, $or: interestOrConditions }
-            : recommendationMatch;
-
-        const personalizedCandidates = await fetchCandidates(personalizedMatch, candidateFetchLimit);
-
-        const fallbackExcludeIds = personalizedCandidates.map((video) => video._id);
-        const fallbackMatch = {
-            isPublished: true,
-            publisherId: { $ne: userId },
-            _id: { $nin: [...watchedVideoIds, ...fallbackExcludeIds] },
-        };
-
-        const fallbackCandidates = personalizedCandidates.length < candidateFetchLimit
-            ? await fetchCandidates(fallbackMatch, candidateFetchLimit - personalizedCandidates.length)
-            : [];
-
-        const candidates = [...personalizedCandidates, ...fallbackCandidates];
-
-        const now = Date.now();
-        const subscribedSet = new Set(subscribedChannelIds);
-        const preferredCategoriesSet = new Set(preferredCategories);
-
-        const scoredCandidates = candidates.map((video) => {
-            let score = 0;
-            const publisherId = video.publisherId?.toString();
-
-            if (publisherId && subscribedSet.has(publisherId)) {
-                score += 5;
-            }
-
-            const historyPublisherScore = publisherId ? (publisherWeights[publisherId] || 0) : 0;
-            score += Math.min(historyPublisherScore, 4) * 0.8;
-
-            if (video.category && preferredCategoriesSet.has(video.category)) {
-                score += Math.min(categoryWeights[video.category] || 0, 5) * 0.9;
-            }
-
-            const daysSinceCreated = Math.max(
-                (now - new Date(video.createdAt).getTime()) / (1000 * 60 * 60 * 24),
-                0
-            );
-            score += Math.max(2 - daysSinceCreated * 0.08, 0);
-
-            score += Math.min((video.views || 0) / 1000, 2);
-
-            return {
-                ...video,
-                recommendationScore: Number(score.toFixed(3)),
-            };
+        const trendingCacheKey = buildCacheKey(TRENDING_CACHE_PREFIX, {
+            category: normalizedCategory,
         });
+        let cachedTrending = await getCache(trendingCacheKey);
 
-        scoredCandidates.sort((a, b) => b.recommendationScore - a.recommendationScore);
+        if (!Array.isArray(cachedTrending) || !cachedTrending.length) {
+            const trendingQuery = { isPublished: true };
+            if (normalizedCategory) {
+                trendingQuery.category = { $regex: normalizedCategory, $options: 'i' };
+            }
 
-        const startIndex = (parsedPage - 1) * parsedLimit;
-        const paginatedVideos = scoredCandidates.slice(startIndex, startIndex + parsedLimit);
+            const candidateVideos = await Video.find(trendingQuery)
+                .select('_id likes comments views createdAt')
+                .lean();
+
+            cachedTrending = candidateVideos
+                .map((video) => ({
+                    id: video._id.toString(),
+                    score: computeVideoScore(video),
+                }))
+                .sort((a, b) => (b.score || 0) - (a.score || 0))
+                .slice(0, TRENDING_CACHE_LIMIT)
+                .map((entry) => entry.id);
+
+            await setCache(trendingCacheKey, cachedTrending, TRENDING_IDS_CACHE_TTL);
+        }
+
+        const trendingIds = Array.isArray(cachedTrending) ? cachedTrending : [];
+
+        const findQuery = {
+            _id: { $in: trendingIds },
+            isPublished: true,
+        };
+
+        if (normalizedCategory) {
+            findQuery.category = { $regex: normalizedCategory, $options: 'i' };
+        }
+
+        if (!canRewatch) {
+            const watched = await WatchHistory.find({ userId })
+                .select('videoId')
+                .lean();
+
+            const watchedIds = watched.map((entry) => entry.videoId);
+
+            if (watchedIds.length) {
+                findQuery._id.$nin = watchedIds;
+            }
+        }
+
+        const videos = await Video.find(findQuery)
+            .populate('publisherId', 'username fullName avatar')
+            .lean();
+
+        const personalized = await Promise.all(
+            videos.map(async (video) => ({
+                video,
+                score: await computePersonalizedScore(userId, video),
+            }))
+        );
+
+        const rankedVideos = personalized
+            .sort((a, b) => b.score - a.score)
+            .map((item) => item.video);
+
+        const totalResults = rankedVideos.length;
+        const skip = (pageValue - 1) * limitValue;
+        const paginated = rankedVideos.slice(skip, skip + limitValue);
 
         return res.status(200).json(
             new APIResponse(
                 200,
                 {
-                    videos: paginatedVideos,
-                    totalResults: scoredCandidates.length,
-                    currentPage: parsedPage,
-                    totalPages: Math.max(Math.ceil(scoredCandidates.length / parsedLimit), 1),
-                    signals: {
-                        preferredCategories,
-                        subscriptionsCount: subscribedChannelIds.length,
-                    }
+                    videos: paginated,
+                    totalResults,
+                    currentPage: pageValue,
+                    totalPages: Math.max(1, Math.ceil(totalResults / limitValue)),
+                    filters: {
+                        category: normalizedCategory,
+                        allowRewatch: canRewatch,
+                        source: 'cached-trending',
+                    },
                 },
-                'Recommendations fetched successfully'
+                'Recommended videos fetched successfully'
             )
         );
     } catch (error) {
         console.error(error);
         return next(new APIError(500, 'Server error'));
     }
+
 }
