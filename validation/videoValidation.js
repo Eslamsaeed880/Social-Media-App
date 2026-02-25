@@ -1,5 +1,10 @@
 import Joi from 'joi';
+import { validateRequest } from './validateRequest.js';
 
+/**
+ * Post Video Validation
+ * POST /api/v1/videos
+ */
 export const postVideoSchema = Joi.object({
     title: Joi.string()
         .required()
@@ -50,6 +55,10 @@ export const postVideoSchema = Joi.object({
         .default(false),
 }).unknown(true); // Allow files from multer
 
+/**
+ * Update Video Validation
+ * PUT /api/v1/videos/:id
+ */
 export const updateVideoSchema = Joi.object({
     title: Joi.string()
         .optional()
@@ -93,6 +102,10 @@ export const updateVideoSchema = Joi.object({
         }),
 });
 
+/**
+ * Get All Videos Validation
+ * GET /api/v1/videos
+ */
 export const getAllVideosSchema = Joi.object({
     page: Joi.number()
         .optional()
@@ -142,6 +155,10 @@ export const getAllVideosSchema = Joi.object({
         }),
 });
 
+/**
+ * Get Trending Videos Validation
+ * GET /api/v1/videos/trending
+ */
 export const getTrendingVideosSchema = Joi.object({
     category: Joi.string()
         .optional()
@@ -152,6 +169,10 @@ export const getTrendingVideosSchema = Joi.object({
         }),
 });
 
+/**
+ * Get Video By ID Validation
+ * GET /api/v1/videos/:id
+ */
 export const getVideoByIdSchema = Joi.object({
     id: Joi.string()
         .required()
@@ -162,7 +183,12 @@ export const getVideoByIdSchema = Joi.object({
         }),
 });
 
-
+/**
+ * Video ID Param Validation
+ * PUT /api/v1/videos/:id
+ * PATCH /api/v1/videos/:id
+ * DELETE /api/v1/videos/:id
+ */
 export const videoIdParamSchema = Joi.object({
     id: Joi.string()
         .required()
@@ -173,6 +199,10 @@ export const videoIdParamSchema = Joi.object({
         }),
 });
 
+/**
+ * Get My Videos Validation
+ * GET /api/v1/videos/my-videos
+ */
 export const getMyVideosSchema = Joi.object({
     page: Joi.number()
         .optional()
@@ -215,6 +245,10 @@ export const getMyVideosSchema = Joi.object({
         }),
 });
 
+/**
+ * Get Recommended Videos Validation
+ * GET /api/v1/videos/recommendations
+ */
 export const getRecommendedVideosSchema = Joi.object({
     page: Joi.number()
         .optional()
@@ -251,37 +285,6 @@ export const getRecommendedVideosSchema = Joi.object({
             'any.only': 'allowRewatch must be either "true" or "false"',
         }),
 });
-
-export const validateRequest = (schema, source = 'body') => {
-    return (req, res, next) => {
-        const data = source === 'body' ? req.body : source === 'params' ? req.params : req.query;
-        const { error, value } = schema.validate(data, {
-            abortEarly: false,
-            stripUnknown: true,
-            convert: true,
-        });
-
-        if (error) {
-            const messages = error.details.map(detail => ({
-                field: detail.path.join('.'),
-                message: detail.message,
-            }));
-            return res.status(400).json({
-                statusCode: 400,
-                message: 'Validation failed',
-                errors: messages,
-            });
-        }
-
-        // Only reassign body (params and query are read-only in Express)
-        // Ensure body is at least an empty object
-        if (source === 'body') {
-            req.body = value || {};
-        }
-
-        next();
-    };
-};
 
 export default {
     postVideoSchema,

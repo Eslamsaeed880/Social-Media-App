@@ -64,8 +64,8 @@ export const createComment = async (req, res, next) => {
         return res.status(201).json(new APIResponse(201, 'Comment created successfully', comment));
         
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Create comment error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -132,8 +132,8 @@ export const replyToComment = async (req, res, next) => {
         return res.status(201).json(new APIResponse(201, 'Reply created successfully', comment));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Reply to comment error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -156,15 +156,15 @@ export const updateComment = async (req, res, next) => {
             return next(new APIError(403, 'You are not authorized to update this comment'));
         }
 
-        comment.content = content || comment.content;
+        comment.content = content;
 
         await comment.save();
         
         return res.status(200).json(new APIResponse(200, 'Comment updated successfully', comment));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Update comment error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -210,8 +210,8 @@ export const deleteComment = async (req, res, next) => {
         return res.status(200).json(new APIResponse(200, 'Comment deleted successfully'));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Delete comment error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -222,10 +222,6 @@ export const getReplies = async (req, res, next) => {
     try {
         const { commentId } = req.params;
         const { page = 1, limit = 10 } = req.query;
-
-        if(!commentId) {
-            return next(new APIError(400, 'Comment ID is required'));
-        }
 
         const parentComment = await Comment.findById(commentId);
 
@@ -287,8 +283,8 @@ export const getReplies = async (req, res, next) => {
             )
         );
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Get replies error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
@@ -300,9 +296,7 @@ export const getCommentsOfVideo = async (req, res, next) => {
     try { 
         const { videoId } = req.params;
         const { page = 1, limit = 10 } = req.query;
-        if (!videoId) {
-            return next(new APIError(400, "Video ID is required"));
-        }
+        
         const comments = await Comment.aggregate([
             {
                 $match: {
@@ -360,18 +354,14 @@ export const getCommentsOfVideo = async (req, res, next) => {
         );
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Get comments of video error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }
 
 export const getCommentById = async (req, res, next) => {
     try {
         const { commentId } = req.params;
-
-        if (!commentId) {
-            return next(new APIError(400, 'Comment ID is required'));
-        }
 
         const comment = await Comment.findById(commentId).populate('createdBy', 'username fullName avatar');
 
@@ -382,7 +372,7 @@ export const getCommentById = async (req, res, next) => {
         return res.status(200).json(new APIResponse(200, 'Comment retrieved successfully', comment));
 
     } catch (error) {
-        console.log(error);
-        return next(new APIError(500, 'Server error'));
+        console.error('Get comment by ID error:', error);
+        return next(new APIError(500, error.message || 'Server error'));
     }
 }

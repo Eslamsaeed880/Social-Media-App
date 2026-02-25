@@ -1,5 +1,10 @@
 import Joi from 'joi';
+import { validateRequest } from './validateRequest.js';
 
+/**
+ * Sign Up Validation
+ * POST /api/v1/users/signup
+ */
 export const signUpSchema = Joi.object({
     fullName: Joi.string()
         .required()
@@ -44,6 +49,10 @@ export const signUpSchema = Joi.object({
         }),
 }).unknown(true); // Allow files from multer
 
+/**
+ * Login Validation
+ * POST /api/v1/users/login
+ */
 export const loginSchema = Joi.object({
     email: Joi.string()
         .required()
@@ -60,6 +69,10 @@ export const loginSchema = Joi.object({
         }),
 });
 
+/**
+ * Update User Profile Validation
+ * PUT /api/v1/users/@:username
+ */
 export const updateUserProfileSchema = Joi.object({
     fullName: Joi.string()
         .optional()
@@ -130,6 +143,13 @@ export const updateUserProfileSchema = Joi.object({
     }).optional(),
 });
 
+/**
+ * Username Param Validation
+ * GET /api/v1/users/@:username
+ * PUT /api/v1/users/@:username
+ * PATCH /api/v1/users/@:username/profile-pic
+ * PATCH /api/v1/users/@:username/cover
+ */
 export const usernameParamSchema = Joi.object({
     username: Joi.string()
         .required()
@@ -143,6 +163,10 @@ export const usernameParamSchema = Joi.object({
         }),
 });
 
+/**
+ * Reset Password Request Validation
+ * POST /api/v1/users/password-reset
+ */
 export const resetPasswordSchema = Joi.object({
     email: Joi.string()
         .required()
@@ -154,6 +178,10 @@ export const resetPasswordSchema = Joi.object({
         }),
 });
 
+/**
+ * Confirm Reset Password Validation
+ * PATCH /api/v1/users/confirm-reset-password
+ */
 export const confirmResetPasswordSchema = Joi.object({
     password: Joi.string()
         .required()
@@ -168,6 +196,10 @@ export const confirmResetPasswordSchema = Joi.object({
         }),
 });
 
+/**
+ * Reset Token Query Validation
+ * PATCH /api/v1/users/confirm-reset-password?token=...
+ */
 export const resetTokenQuerySchema = Joi.object({
     token: Joi.string()
         .required()
@@ -180,6 +212,10 @@ export const resetTokenQuerySchema = Joi.object({
         }),
 });
 
+/**
+ * Change Password Validation
+ * PATCH /api/v1/users/change-password
+ */
 export const changePasswordSchema = Joi.object({
     currentPassword: Joi.string()
         .required()
@@ -200,36 +236,6 @@ export const changePasswordSchema = Joi.object({
             'any.invalid': 'New password must be different from current password',
         }),
 });
-
-export const validateRequest = (schema, source = 'body') => {
-    return (req, res, next) => {
-        const data = source === 'body' ? req.body : source === 'params' ? req.params : req.query;
-        const { error, value } = schema.validate(data, {
-            abortEarly: false,
-            stripUnknown: true,
-            convert: true,
-        });
-
-        if (error) {
-            const messages = error.details.map(detail => ({
-                field: detail.path.join('.'),
-                message: detail.message,
-            }));
-            return res.status(400).json({
-                statusCode: 400,
-                message: 'Validation failed',
-                errors: messages,
-            });
-        }
-
-        // Only reassign body (params and query are read-only in Express)
-        if (source === 'body') {
-            req.body = value || {};
-        }
-
-        next();
-    };
-};
 
 export default {
     signUpSchema,
