@@ -1,4 +1,5 @@
 import { jest } from '@jest/globals';
+import { createRes } from '../utils/httpTestUtils.js';
 
 const findOneMock = jest.fn();
 const saveMock = jest.fn();
@@ -14,30 +15,23 @@ UserMock.findOne = findOneMock;
 const enqueueEmailEventMock = jest.fn();
 const enqueueMediaJobMock = jest.fn();
 
-await jest.unstable_mockModule('../../models/user.js', () => ({
+await jest.unstable_mockModule('../../../models/user.js', () => ({
     default: UserMock,
 }));
 
-await jest.unstable_mockModule('../../queues/emailQueue.js', () => ({
+await jest.unstable_mockModule('../../../queues/emailQueue.js', () => ({
     enqueueEmailEvent: enqueueEmailEventMock,
 }));
 
-await jest.unstable_mockModule('../../queues/mediaQueue.js', () => ({
+await jest.unstable_mockModule('../../../queues/mediaQueue.js', () => ({
     enqueueMediaJob: enqueueMediaJobMock,
 }));
 
-await jest.unstable_mockModule('../../utils/redisCache.js', () => ({
+await jest.unstable_mockModule('../../../utils/redisCache.js', () => ({
     invalidateCacheByPrefixes: jest.fn(),
 }));
 
-const { signUp, login } = await import('../../controllers/user.js');
-
-const createRes = () => {
-    const res = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-};
+const { signUp, login } = await import('../../../controllers/user.js');
 
 describe('User Controller', () => {
     beforeEach(() => {

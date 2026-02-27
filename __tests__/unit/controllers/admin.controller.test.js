@@ -1,4 +1,6 @@
 import { jest } from '@jest/globals';
+import { createRes } from '../utils/httpTestUtils.js';
+import { createListQueryChain, createPopulateChain } from '../utils/queryTestUtils.js';
 
 const ReportMock = {
     find: jest.fn(),
@@ -26,23 +28,23 @@ const CommentMock = {
 
 const invalidateCacheByPrefixesMock = jest.fn();
 
-await jest.unstable_mockModule('../../models/report.js', () => ({
+await jest.unstable_mockModule('../../../models/report.js', () => ({
     default: ReportMock,
 }));
 
-await jest.unstable_mockModule('../../models/user.js', () => ({
+await jest.unstable_mockModule('../../../models/user.js', () => ({
     default: UserMock,
 }));
 
-await jest.unstable_mockModule('../../models/video.js', () => ({
+await jest.unstable_mockModule('../../../models/video.js', () => ({
     default: VideoMock,
 }));
 
-await jest.unstable_mockModule('../../models/comment.js', () => ({
+await jest.unstable_mockModule('../../../models/comment.js', () => ({
     default: CommentMock,
 }));
 
-await jest.unstable_mockModule('../../utils/redisCache.js', () => ({
+await jest.unstable_mockModule('../../../utils/redisCache.js', () => ({
     invalidateCacheByPrefixes: invalidateCacheByPrefixesMock,
 }));
 
@@ -61,32 +63,7 @@ const {
     getAllComments,
     getCommentById,
     deleteComment,
-} = await import('../../controllers/admin.js');
-
-const createRes = () => {
-    const res = {};
-    res.status = jest.fn().mockReturnValue(res);
-    res.json = jest.fn().mockReturnValue(res);
-    return res;
-};
-
-const createListQueryChain = (resolvedValue, terminalMethod = 'limit') => {
-    const chain = {
-        populate: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-    };
-
-    if (terminalMethod === 'sort') {
-        chain.sort = jest.fn().mockResolvedValue(resolvedValue);
-    } else {
-        chain.limit = jest.fn().mockResolvedValue(resolvedValue);
-    }
-
-    return chain;
-};
+} = await import('../../../controllers/admin.js');
 
 describe('Admin Controller', () => {
     beforeEach(() => {
@@ -162,11 +139,7 @@ describe('Admin Controller', () => {
 
     it('getReportById returns report details', async () => {
         const report = { _id: 'report-1' };
-        const populate4Target = { populate: jest.fn().mockResolvedValueOnce(report) };
-        const populate3Target = { populate: jest.fn().mockReturnValueOnce(populate4Target) };
-        const populate2Target = { populate: jest.fn().mockReturnValueOnce(populate3Target) };
-        const populate1Target = { populate: jest.fn().mockReturnValueOnce(populate2Target) };
-        ReportMock.findById.mockReturnValueOnce(populate1Target);
+        ReportMock.findById.mockReturnValueOnce(createPopulateChain(report, 4));
 
         const req = { params: { reportId: 'report-1' } };
         const res = createRes();
@@ -344,9 +317,7 @@ describe('Admin Controller', () => {
     });
 
     it('getCommentById returns 404 when comment is not found', async () => {
-        const finalPopulate = jest.fn().mockResolvedValueOnce(null);
-        const firstPopulateTarget = { populate: jest.fn().mockReturnValueOnce({ populate: finalPopulate }) };
-        CommentMock.findById.mockReturnValueOnce(firstPopulateTarget);
+        CommentMock.findById.mockReturnValueOnce(createPopulateChain(null, 2));
 
         const req = { params: { commentId: 'missing-comment' } };
         const res = createRes();
