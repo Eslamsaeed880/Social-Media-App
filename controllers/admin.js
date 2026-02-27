@@ -58,10 +58,6 @@ export const updateReportStatus = async (req, res, next) => {
         const { reportId } = req.params;
         const { status, reviewNotes } = req.body;
 
-        if (!['pending', 'reviewed', 'resolved'].includes(status)) {
-            return next(new APIError(400, 'Invalid status value'));
-        }
-
         const report = await Report.findById(reportId);
 
         if (!report) {
