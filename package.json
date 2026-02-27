@@ -5,7 +5,7 @@
   "main": "app.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "start": "nodemon app.js",
     "reindex:es": "node scripts/reindexElastic.js"
   },
@@ -44,5 +44,8 @@
     "passport-google-oauth20": "^2.0.0",
     "rate-limit-redis": "^4.2.0",
     "redis": "^5.11.0"
+  },
+  "devDependencies": {
+    "jest": "^30.2.0"
   }
 }
