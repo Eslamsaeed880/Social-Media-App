@@ -2,6 +2,11 @@ import express from "express";
 import { addToWatchLater, getWatchLaterList, removeFromWatchLater } from "../controllers/watchLater.js";
 import isAuth from "../middlewares/isAuth.js";
 import cache from "../middlewares/cache.js";
+import { validateRequest } from "../validation/validateRequest.js";
+import {
+    addToWatchLaterSchema,
+    watchLaterVideoIdParamSchema,
+} from "../validation/watchLaterValidation.js";
 
 const router = express.Router();
 
@@ -15,8 +20,8 @@ router.get("/", isAuth, cache({
     ),
 }), getWatchLaterList);
 
-router.post("/", isAuth, addToWatchLater);
+router.post("/", isAuth, validateRequest(addToWatchLaterSchema, 'body'), addToWatchLater);
 
-router.delete("/:videoId", isAuth, removeFromWatchLater);
+router.delete("/:videoId", isAuth, validateRequest(watchLaterVideoIdParamSchema, 'params'), removeFromWatchLater);
 
 export default router;
