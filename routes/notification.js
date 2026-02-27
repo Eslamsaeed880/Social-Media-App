@@ -7,10 +7,15 @@ import {
 } from '../controllers/notification.js';
 import isAuth from '../middlewares/isAuth.js';
 import cache from '../middlewares/cache.js';
+import { validateRequest } from '../validation/validateRequest.js';
+import {
+    notificationIdParamSchema,
+    notificationsQuerySchema,
+} from '../validation/notificationValidation.js';
 
 const router = express.Router();
 
-router.get("/", isAuth, cache({
+router.get("/", isAuth, validateRequest(notificationsQuerySchema, 'query'), cache({
     prefix: 'notifications',
     scope: 'all',
     ttlSeconds: 60,
@@ -22,9 +27,9 @@ router.get("/", isAuth, cache({
 
 router.patch("/read", isAuth, markAllAsRead);
 
-router.patch("/read/:notificationId", isAuth, markAsRead);
+router.patch("/read/:notificationId", isAuth, validateRequest(notificationIdParamSchema, 'params'), markAsRead);
 
-router.delete("/:notificationId", isAuth, deleteNotification);
+router.delete("/:notificationId", isAuth, validateRequest(notificationIdParamSchema, 'params'), deleteNotification);
 
 
 export default router;
