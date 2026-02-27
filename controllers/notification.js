@@ -117,10 +117,6 @@ export const markAsRead = async (req, res, next) => {
     try {
         const { notificationId } = req.params;
         const { user } = req;
-        
-        if (!notificationId) {
-            return next(new APIError(400, 'Notification ID is required'));
-        }
 
         const notification = await Notification.findOne({ _id: notificationId, recipient: user.id });
 
@@ -148,10 +144,6 @@ export const deleteNotification = async (req, res, next) => {
     try {
         const { notificationId } = req.params;
         const { user } = req;
-
-        if (!notificationId) {
-            return next(new APIError(400, 'Notification ID is required'));
-        }
 
         const notification = await Notification.findOne({ _id: notificationId, recipient: user.id });
 

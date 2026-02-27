@@ -10,18 +10,6 @@ export const reportContent = async (req, res, next) => {
     try {
         const { reason, description, videoId, commentId, reportedUserId } = req.body;
 
-        if (!reason || !description) {
-            return next(new APIError(400, 'Reason and description are required'));
-        }
-
-        if (!videoId && !commentId && !reportedUserId) {
-            return next(new APIError(400, 'one of videoId, commentId, or reportedUserId must be provided'));
-        }
-
-        if((videoId && commentId) || (videoId && reportedUserId) || (commentId && reportedUserId)) {
-            return next(new APIError(400, 'You should specify only one of videoId, commentId, or reportedUserId to report'));
-        }
-
         const report = new Report({
             reportedBy: req.user.id,
             reason,

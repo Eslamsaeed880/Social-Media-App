@@ -2,12 +2,18 @@ import express from 'express';
 import { getUserReports, getReportById, reportContent } from '../controllers/report.js';
 import isAuth from '../middlewares/isAuth.js';
 import cache from '../middlewares/cache.js';
+import { validateRequest } from '../validation/validateRequest.js';
+import {
+    createReportSchema,
+    reportsQuerySchema,
+    reportIdParamSchema,
+} from '../validation/reportValidation.js';
 
 const router = express.Router();
 
-router.post('/', isAuth, reportContent);
+router.post('/', isAuth, validateRequest(createReportSchema, 'body'), reportContent);
 
-router.get('/', isAuth, cache({
+router.get('/', isAuth, validateRequest(reportsQuerySchema, 'query'), cache({
     prefix: 'reports',
     scope: 'all',
     ttlSeconds: 60,
@@ -17,7 +23,7 @@ router.get('/', isAuth, cache({
     ),
 }), getUserReports);
 
-router.get('/:reportId', isAuth, cache({
+router.get('/:reportId', isAuth, validateRequest(reportIdParamSchema, 'params'), cache({
     prefix: 'reports',
     scope: 'report',
     ttlSeconds: 60,
