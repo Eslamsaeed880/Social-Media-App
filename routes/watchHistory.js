@@ -2,10 +2,15 @@ import express from 'express';
 import { clearWatchHistory, deleteWatchHistoryEntry, getWatchHistory } from '../controllers/watchHistory.js';
 import isAuth from '../middlewares/isAuth.js';
 import cache from '../middlewares/cache.js';
+import { validateRequest } from '../validation/validateRequest.js';
+import {
+    watchHistoryQuerySchema,
+    historyIdParamSchema,
+} from '../validation/watchHistoryValidation.js';
 
 const router = express.Router();
 
-router.get("/", isAuth, cache({
+router.get("/", isAuth, validateRequest(watchHistoryQuerySchema, 'query'), cache({
     prefix: 'watch-history',
     scope: 'all',
     ttlSeconds: 60,
@@ -17,6 +22,6 @@ router.get("/", isAuth, cache({
 
 router.delete("/", isAuth, clearWatchHistory);
 
-router.delete("/:historyId", isAuth, deleteWatchHistoryEntry);
+router.delete("/:historyId", isAuth, validateRequest(historyIdParamSchema, 'params'), deleteWatchHistoryEntry);
 
 export default router;
