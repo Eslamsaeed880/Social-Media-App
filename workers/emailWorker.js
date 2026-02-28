@@ -2,6 +2,9 @@ import { Worker } from 'bullmq';
 import IORedis from 'ioredis';
 import transporter from '../config/transporter.js';
 import config from '../config/config.js';
+import { overrideConsoleMethods } from '../utils/logger.js';
+
+overrideConsoleMethods();
 
 const connection = new IORedis(process.env.REDIS_URL || 'redis://localhost:6379', {
     maxRetriesPerRequest: null,

@@ -3,6 +3,9 @@ import IORedis from 'ioredis';
 import mongoose from 'mongoose';
 import createNotification from '../utils/createNotification.js';
 import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
+import { overrideConsoleMethods } from '../utils/logger.js';
+
+overrideConsoleMethods();
 
 await mongoose.connect(process.env.MONGODB_URI);
 console.log('Notifications worker connected to MongoDB');

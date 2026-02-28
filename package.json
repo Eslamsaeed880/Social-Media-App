@@ -7,6 +7,7 @@
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "start": "nodemon app.js",
+    "load:test": "autocannon -c 100 -d 30 -p 10 http://localhost:3000/api/v1/non-existent",
     "reindex:es": "node scripts/reindexElastic.js"
   },
   "repository": {
@@ -22,6 +23,7 @@
   "homepage": "https://github.com/Eslamsaeed880/Social-Media-App#readme",
   "dependencies": {
     "@elastic/elasticsearch": "^8.18.0",
+    "autocannon": "^8.0.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.14.0",
     "cloudinary": "^2.9.0",
@@ -43,9 +45,11 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "rate-limit-redis": "^4.2.0",
-    "redis": "^5.11.0"
+    "redis": "^5.11.0",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
+    "autocannon": "^8.0.0",
     "jest": "^30.2.0"
   }
 }

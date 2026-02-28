@@ -3,6 +3,9 @@ import IORedis from 'ioredis';
 import mongoose from 'mongoose';
 import ChannelAnalytics from '../models/channelAnalytics.js';
 import createUserInteraction from '../utils/createUserInteraction.js';
+import { overrideConsoleMethods } from '../utils/logger.js';
+
+overrideConsoleMethods();
 
 await mongoose.connect(process.env.MONGODB_URI);
 console.log('Worker connected to MongoDB');

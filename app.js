@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { overrideConsoleMethods } from './utils/logger.js';
 import express from 'express';
 import helmet from 'helmet';
 import connectDb from './config/mongodb.js';
@@ -18,6 +19,8 @@ import watchHistoryRouter from './routes/watchHistory.js';
 import channelRouter from './routes/channel.js';
 import { errorHandler, notFound } from './middlewares/error.js';
 import passport, { configurePassport } from './middlewares/googleAuth.js';
+
+overrideConsoleMethods();
 
 const app = express();
 const PORT = process.env.PORT || 3000;

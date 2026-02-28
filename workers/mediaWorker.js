@@ -9,6 +9,9 @@ import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinary.js
 import { enqueueNotificationEvent } from '../queues/notificationsQueue.js';
 import { invalidateCacheByPrefixes } from '../utils/redisCache.js';
 import crypto from 'crypto';
+import { overrideConsoleMethods } from '../utils/logger.js';
+
+overrideConsoleMethods();
 
 await mongoose.connect(process.env.MONGODB_URI);
 console.log('Media worker connected to MongoDB');
