@@ -26,7 +26,7 @@ await jest.unstable_mockModule('../../../models/video.js', () => ({
     default: VideoMock,
 }));
 
-const { createPlaylist, getUserPlaylists, addVideoToPlaylist, getPlaylistVideos } = await import('../../../controllers/playlist.js');
+const { createPlaylist, getUserPlaylists, addVideoToPlaylist, getPlaylistVideos, removeVideoFromPlaylist, deletePlaylist, updatePlaylist } = await import('../../../controllers/playlist.js');
 
 describe('Playlist Controller', () => {
     beforeEach(() => {
@@ -122,5 +122,84 @@ describe('Playlist Controller', () => {
         expect(errorArg.statusCode).toBe(403);
         expect(errorArg.message).toMatch(/private/i);
         expect(VideoMock.find).not.toHaveBeenCalled();
+    });
+
+    it('removeVideoFromPlaylist removes video for owner', async () => {
+        const playlistDoc = {
+            createdBy: { toString: () => 'user-1' },
+            videos: ['video-1', 'video-2'],
+            save: jest.fn().mockResolvedValueOnce(),
+        };
+        PlaylistMock.findById.mockResolvedValueOnce(playlistDoc);
+
+        const req = {
+            params: { playlistId: 'playlist-1', videoId: 'video-1' },
+            user: { id: 'user-1' },
+        };
+        const res = createRes();
+        const next = jest.fn();
+
+        await removeVideoFromPlaylist(req, res, next);
+
+        expect(playlistDoc.videos).toEqual(['video-2']);
+        expect(playlistDoc.save).toHaveBeenCalledTimes(1);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('deletePlaylist returns 403 for non-owner', async () => {
+        PlaylistMock.findById.mockResolvedValueOnce({
+            createdBy: { toString: () => 'owner-1' },
+        });
+
+        const req = {
+            params: { playlistId: 'playlist-1' },
+            user: { id: 'user-1' },
+        };
+        const res = createRes();
+        const next = jest.fn();
+
+        await deletePlaylist(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        const errorArg = next.mock.calls[0][0];
+        expect(errorArg.statusCode).toBe(403);
+    });
+
+    it('updatePlaylist updates allowed fields', async () => {
+        const playlistDoc = {
+            createdBy: { toString: () => 'user-1' },
+            name: 'Old',
+            description: 'Old desc',
+            isPublic: false,
+            tags: [],
+            save: jest.fn().mockResolvedValueOnce(),
+        };
+        PlaylistMock.findById.mockResolvedValueOnce(playlistDoc);
+
+        const req = {
+            params: { playlistId: 'playlist-1' },
+            user: { id: 'user-1' },
+            body: {
+                name: 'New',
+                description: 'New desc',
+                isPublic: true,
+                tags: ['music'],
+                ignored: 'value',
+            },
+        };
+        const res = createRes();
+        const next = jest.fn();
+
+        await updatePlaylist(req, res, next);
+
+        expect(playlistDoc.name).toBe('New');
+        expect(playlistDoc.description).toBe('New desc');
+        expect(playlistDoc.isPublic).toBe(true);
+        expect(playlistDoc.tags).toEqual(['music']);
+        expect(playlistDoc.ignored).toBeUndefined();
+        expect(playlistDoc.save).toHaveBeenCalledTimes(1);
+        expect(res.status).toHaveBeenCalledWith(200);
+        expect(next).not.toHaveBeenCalled();
     });
 });

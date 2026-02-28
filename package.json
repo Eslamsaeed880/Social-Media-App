@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
+    "test:coverage-map": "node scripts/checkHandlerCoverage.js",
     "start": "nodemon app.js",
     "load:test": "autocannon -c 100 -d 30 -p 10 http://localhost:3000/api/v1/non-existent",
     "reindex:es": "node scripts/reindexElastic.js"

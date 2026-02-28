@@ -47,7 +47,7 @@ await jest.unstable_mockModule('../../../queues/analyticsQueue.js', () => ({
     enqueueAnalyticsEvent: enqueueAnalyticsEventMock,
 }));
 
-const { createComment, updateComment, deleteComment, getReplies, getCommentsOfVideo } = await import('../../../controllers/comment.js');
+const { createComment, replyToComment, updateComment, deleteComment, getReplies, getCommentsOfVideo } = await import('../../../controllers/comment.js');
 
 describe('Comment Controller', () => {
     beforeEach(() => {
@@ -110,6 +110,25 @@ describe('Comment Controller', () => {
         expect(enqueueAnalyticsEventMock).toHaveBeenCalledTimes(1);
         expect(res.status).toHaveBeenCalledWith(201);
         expect(next).not.toHaveBeenCalled();
+    });
+
+    it('replyToComment returns 404 when parent comment does not exist', async () => {
+        CommentMock.findById.mockResolvedValueOnce(null);
+
+        const req = {
+            params: { commentId: 'missing-comment' },
+            body: { content: 'reply' },
+            user: { id: 'user-1' },
+        };
+        const res = createRes();
+        const next = jest.fn();
+
+        await replyToComment(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        const errorArg = next.mock.calls[0][0];
+        expect(errorArg.statusCode).toBe(404);
+        expect(errorArg.message).toMatch(/parent comment not found/i);
     });
 
     it('updateComment returns 403 when user is not owner', async () => {

@@ -93,7 +93,7 @@ await jest.unstable_mockModule('../../../utils/computePersonalizedScore.js', () 
 	computePersonalizedScore: computePersonalizedScoreMock,
 }));
 
-const { postVideo, getVideoById, togglePublishVideo, updateVideo, deleteVideo } = await import('../../../controllers/video.js');
+const { postVideo, getVideoById, togglePublishVideo, updateVideo, deleteVideo, getTrendingVideos, getMyVideos, getRecommendedVideos } = await import('../../../controllers/video.js');
 
 describe('Video Controller', () => {
 	beforeEach(() => {
@@ -411,6 +411,77 @@ describe('Video Controller', () => {
 			expect(invalidateCacheByPrefixesMock).toHaveBeenCalledWith('videos:');
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledTimes(1);
+			expect(next).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('getTrendingVideos', () => {
+		it('returns ranked trending videos and caches ids', async () => {
+			VideoMock.find.mockReturnValueOnce({
+				populate: jest.fn().mockReturnValue({
+					lean: jest.fn().mockResolvedValueOnce([
+						{ _id: { toString: () => 'v1' }, views: 10, likes: 3, comments: 1, createdAt: new Date() },
+					]),
+				}),
+			});
+
+			const req = { query: {} };
+			const res = createRes();
+			const next = jest.fn();
+
+			await getTrendingVideos(req, res, next);
+
+			expect(VideoMock.find).toHaveBeenCalledTimes(1);
+			expect(setCacheMock).toHaveBeenCalledTimes(1);
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(next).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('getMyVideos', () => {
+		it('returns current user videos using aggregate pagination', async () => {
+			VideoMock.countDocuments.mockResolvedValueOnce(1);
+			VideoMock.aggregate.mockResolvedValueOnce([{ _id: 'video-1' }]);
+
+			const req = {
+				query: { page: 1, limit: 10 },
+				user: { id: '64c9f9a9f8a8c1d7b4c3a111' },
+			};
+			const res = createRes();
+			const next = jest.fn();
+
+			await getMyVideos(req, res, next);
+
+			expect(VideoMock.countDocuments).toHaveBeenCalledTimes(1);
+			expect(VideoMock.aggregate).toHaveBeenCalledTimes(1);
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(next).not.toHaveBeenCalled();
+		});
+	});
+
+	describe('getRecommendedVideos', () => {
+		it('returns recommended videos from cached trending ids', async () => {
+			getCacheMock.mockResolvedValueOnce(['video-1']);
+			VideoMock.find.mockReturnValueOnce({
+				populate: jest.fn().mockReturnValue({
+					lean: jest.fn().mockResolvedValueOnce([
+						{ _id: 'video-1', title: 'Demo', publisherId: { _id: 'pub-1' } },
+					]),
+				}),
+			});
+
+			const req = {
+				query: { page: 1, limit: 10, allowRewatch: 'true' },
+				user: { id: 'user-1' },
+			};
+			const res = createRes();
+			const next = jest.fn();
+
+			await getRecommendedVideos(req, res, next);
+
+			expect(getCacheMock).toHaveBeenCalledTimes(1);
+			expect(VideoMock.find).toHaveBeenCalledTimes(1);
+			expect(res.status).toHaveBeenCalledWith(200);
 			expect(next).not.toHaveBeenCalled();
 		});
 	});

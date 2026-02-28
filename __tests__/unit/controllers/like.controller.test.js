@@ -50,7 +50,7 @@ await jest.unstable_mockModule('../../../queues/analyticsQueue.js', () => ({
     enqueueAnalyticsEvent: enqueueAnalyticsEventMock,
 }));
 
-const { likeVideo, unlikeVideo } = await import('../../../controllers/like.js');
+const { likeVideo, unlikeVideo, likeComment, unlikeComment } = await import('../../../controllers/like.js');
 
 describe('Like Controller', () => {
     beforeEach(() => {
@@ -146,5 +146,53 @@ describe('Like Controller', () => {
         const errorArg = next.mock.calls[0][0];
         expect(errorArg.statusCode).toBe(400);
         expect(errorArg.message).toMatch(/have not liked/i);
+    });
+
+    it('likeComment creates like and returns 201', async () => {
+        const commentDoc = {
+            _id: 'comment-1',
+            createdBy: 'author-1',
+            content: 'hello',
+            likes: 0,
+            save: jest.fn().mockResolvedValueOnce(),
+        };
+        CommentMock.findById.mockResolvedValueOnce(commentDoc);
+        LikeMock.findOne.mockResolvedValueOnce(null);
+        UserMock.findById.mockResolvedValueOnce({ username: 'alice' });
+        likeSaveMock.mockResolvedValueOnce();
+        enqueueNotificationEventMock.mockResolvedValueOnce();
+
+        const req = {
+            body: { commentId: 'comment-1' },
+            user: { id: 'user-1' },
+        };
+        const res = createRes();
+        const next = jest.fn();
+
+        await likeComment(req, res, next);
+
+        expect(LikeMock).toHaveBeenCalledWith({ likedBy: 'user-1', commentId: 'comment-1' });
+        expect(commentDoc.likes).toBe(1);
+        expect(commentDoc.save).toHaveBeenCalledTimes(1);
+        expect(res.status).toHaveBeenCalledWith(201);
+        expect(next).not.toHaveBeenCalled();
+    });
+
+    it('unlikeComment returns 404 when comment is missing', async () => {
+        CommentMock.findById.mockResolvedValueOnce(null);
+
+        const req = {
+            body: { commentId: 'missing-comment' },
+            user: { id: 'user-1' },
+        };
+        const res = createRes();
+        const next = jest.fn();
+
+        await unlikeComment(req, res, next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        const errorArg = next.mock.calls[0][0];
+        expect(errorArg.statusCode).toBe(404);
+        expect(errorArg.message).toMatch(/comment not found/i);
     });
 });
