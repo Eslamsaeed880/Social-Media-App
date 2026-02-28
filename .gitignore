@@ -1,5 +1,4 @@
 node_modules
 .env
 uploads/
-ci.yml
 compose.txt
