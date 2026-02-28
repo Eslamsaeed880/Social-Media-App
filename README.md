@@ -140,13 +140,6 @@ FRONTEND_URL=https://your-frontend-url.com
 
 ---
 
-## 🌐 API Endpoints
-
-Auth labels:
-- Public: no token required
-- Auth: authenticated user required
-- Optional: works with or without auth context
-
 ## 📚 API Documentation
 
 **Auth labels:**
