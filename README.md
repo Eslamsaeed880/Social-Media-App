@@ -26,7 +26,7 @@ Built with Express, MongoDB, Redis, and BullMQ, featuring async workers, intelli
 
 ---
 
-## 🏗️ Project Architecture
+## 🏗️ Project System Design 
 
 - API Layer: routes + controllers
 - Domain/Data Layer: models
