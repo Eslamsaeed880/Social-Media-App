@@ -1,40 +1,19 @@
-# Social Media App API
+# 🚀 Social Media App API
 
 _A scalable social media with intelligent recommendations and personalized trending.  
 Built with Express, MongoDB, Redis, and BullMQ, featuring async workers, intelligent caching, queue-driven architecture, and a recommendation engine that blends global engagement signals with user interests._
 
-## Biggest Features First
+## 🌟 Biggest Features First
 
-### 1) Event-Driven Background Processing (BullMQ + Redis)
-- Dedicated queues for analytics, notifications, email, and media.
-- Dedicated workers for each queue with retry/backoff and concurrency controls.
-- Keeps API response times fast by moving heavy/non-critical work async.
-
-### 2) Personalized Discovery + Channel Analytics
-- Trending and recommendation endpoints.
-- User interaction tracking (views/likes/comments) feeds personalized scoring.
-- Per-channel analytics with daily stats, top videos, watch-time, and growth events.
-
-### 3) Multi-Layer Performance Strategy
-- Redis-based response caching middleware with scoped cache keys.
-- Cache invalidation on write operations.
-- API rate limiting.
-
-### 4) Operational Readiness
-- Dockerized app + workers + MongoDB + Redis (docker-compose).
-- Winston-based logging bridge.
-- Unit-test suite across controllers.
-- GitHub Actions CI/CD workflow with test/build/publish/deploy stages.
-
-### 5) Security and Access Control
-- JWT-based auth plus optional Google OAuth flow.
-- Role-protected admin routes.
-- Request validation via Joi schemas.
-- Helmet + compression + centralized error handling.
+### 1) ⚡ Event-Driven Background Processing (BullMQ + Redis)
+### 2) 🤖 Personalized Discovery + Channel Analytics
+### 3) ⚙️ Multi-Layer Performance Strategy
+### 4) 🛠 Operational Readiness
+### 5) 🔐 Security and Access Control
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 - Runtime: Node.js (ESM), Express 5
 - Database: MongoDB (Mongoose)
@@ -47,7 +26,7 @@ Built with Express, MongoDB, Redis, and BullMQ, featuring async workers, intelli
 
 ---
 
-## Project Architecture
+## 🏗️ Project Architecture
 
 - API Layer: routes + controllers
 - Domain/Data Layer: models
@@ -89,7 +68,7 @@ flowchart LR
 
 ---
 
-## Local Setup
+## 🖥️ Local Setup
 
 ### Prerequisites
 - Node.js 20+
@@ -119,7 +98,7 @@ If running directly, ensure MongoDB and Redis are already reachable.
 
 ---
 
-## Environment Variables
+## 📝 Environment Variables
 
 Add these to your `.env` file:
 
@@ -152,7 +131,7 @@ FRONTEND_URL=https://your-frontend-url.com
 
 ---
 
-## Scripts
+## 🧰 Scripts
 
 - npm test
 - npm run test:coverage-map
@@ -161,7 +140,7 @@ FRONTEND_URL=https://your-frontend-url.com
 
 ---
 
-## API Endpoints
+## 🌐 API Endpoints
 
 Auth labels:
 - Public: no token required
