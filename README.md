@@ -1,6 +1,7 @@
 # Social Media App API
 
-A production-style backend for a social media platform built with Express, MongoDB, Redis, and BullMQ.
+_A scalable social media with intelligent recommendations and personalized trending.  
+Built with Express, MongoDB, Redis, and BullMQ, featuring async workers, intelligent caching, queue-driven architecture, and a recommendation engine that blends global engagement signals with user interests._
 
 ## Biggest Features First
 
@@ -118,7 +119,6 @@ If running directly, ensure MongoDB and Redis are already reachable.
 
 ---
 
-
 ## Environment Variables
 
 Add these to your `.env` file:
@@ -167,6 +167,7 @@ Auth labels:
 - Public: no token required
 - Auth: authenticated user required
 - Optional: works with or without auth context
+
 ## 📚 API Documentation
 
 **Auth labels:**
@@ -275,123 +276,122 @@ Auth labels:
 
 ## 🗂️ Project Structure
 
-
+```plaintext
 Social-Media-App/
-├── app.js                      # Main application file
-├── package.json                # Dependencies and scripts
-├── Dockerfile                  # Docker container setup
-├── docker-compose.yml          # Multi-service orchestration
-├── config/
-│   ├── config.js               # General configuration
-│   ├── mongodb.js              # MongoDB connection
-│   ├── transporter.js          # Email transporter config
-├── controllers/
-│   ├── admin.js                # Admin logic
-│   ├── channel.js              # Channel analytics
-│   ├── comment.js              # Comment management
-│   ├── like.js                 # Like/unlike logic
-│   ├── notification.js         # Notification handling
-│   ├── playlist.js             # Playlist operations
-│   ├── report.js               # Content reporting
-│   ├── subscription.js         # Channel subscriptions
-│   ├── user.js                 # User management
-│   ├── video.js                # Video management
-│   ├── watchHistory.js         # Watch history
-│   └── watchLater.js           # Watch later list
-├── middlewares/
-│   ├── cache.js                # Response caching
-│   ├── error.js                # Error handling
-│   ├── googleAuth.js           # Google OAuth setup
-│   ├── isAdmin.js              # Admin authorization
-│   ├── isAuth.js               # JWT authentication
-│   └── multer.js               # File upload handling
-├── models/
-│   ├── channelAnalytics.js     # Channel analytics schema
-│   ├── comment.js              # Comment schema
-│   ├── like.js                 # Like schema
-│   ├── notification.js         # Notification schema
-│   ├── playlist.js             # Playlist schema
-│   ├── report.js               # Report schema
-│   ├── subscription.js         # Subscription schema
-│   ├── user.js                 # User schema
-│   ├── userInteraction.js      # User interaction schema
-│   ├── userInterest.js         # User interest schema
-│   ├── video.js                # Video schema
-│   ├── videoCategory.js        # Video category schema
-│   ├── watchHistory.js         # Watch history schema
-│   └── watchLater.js           # Watch later schema
-├── routes/
-│   ├── admin.js                # Admin routes
-│   ├── channel.js              # Channel routes
-│   ├── comment.js              # Comment routes
-│   ├── like.js                 # Like routes
-│   ├── notification.js         # Notification routes
-│   ├── playlist.js             # Playlist routes
-│   ├── report.js               # Report routes
-│   ├── subscription.js         # Subscription routes
-│   ├── user.js                 # User routes
-│   ├── video.js                # Video routes
-│   ├── watchHistory.js         # Watch history routes
-│   └── watchLater.js           # Watch later routes
-├── validation/
-│   ├── adminValidation.js          # Admin input validation
-│   ├── commentValidation.js        # Comment validation
-│   ├── likeValidation.js           # Like validation
-│   ├── notificationValidation.js   # Notification validation
-│   ├── playlistValidation.js       # Playlist validation
-│   ├── reportValidation.js         # Report validation
-│   ├── subscriptionValidation.js   # Subscription validation
-│   ├── userValidation.js           # User validation
-│   ├── validateRequest.js          # Request validation middleware
-│   ├── videoValidation.js          # Video validation
-│   ├── watchHistoryValidation.js   # Watch history validation
-│   └── watchLaterValidation.js     # Watch later validation
-├── docs/                      # Documentation (architecture, API, etc.)
-├── middlewares/               # Express middlewares
-├── queues/
-│   ├── analyticsQueue.js      # Analytics queue
-│   ├── emailQueue.js          # Email queue
-│   ├── mediaQueue.js          # Media queue
-│   └── notificationsQueue.js  # Notifications queue
-├── scripts/
-│   └── checkHandlerCoverage.js    # Coverage utility script
-├── uploads/                   # Uploaded media files
-├── utils/
-│   ├── addToWatchHistory.js       # Watch history utility
-│   ├── APIError.js                # API error class
-│   ├── apiLimiter.js              # Rate limiter
-│   ├── APIResponse.js             # API response helper
-│   ├── cloudinary.js              # Cloudinary utility
-│   ├── computePersonalizedScore.js# Personalized scoring
-│   ├── computeVideoScore.js       # Video scoring
-│   ├── createNotification.js      # Notification creation
-│   ├── createUserInteraction.js   # User interaction utility
-│   ├── logger.js                  # Logging utility
-│   ├── redisCache.js              # Redis cache utility
-├── workers/
-│   ├── analyticsWorker.js         # Analytics worker
-│   ├── emailWorker.js             # Email worker
-│   ├── mediaWorker.js             # Media worker
-│   └── notificationsWorker.js     # Notifications worker
-├── __tests__/
+├── app.js                    # Main Express application file
+├── package.json              # Project metadata, dependencies, and scripts
+├── Dockerfile                # Docker image build instructions
+├── docker-compose.yml        # Multi-service orchestration (MongoDB, Redis, workers)
+├── config/                   # Configuration files
+│   ├── config.js             # General project configuration
+│   ├── mongodb.js            # MongoDB connection setup
+│   └── transporter.js        # Email server configuration
+├── controllers/              # Express route controllers (API logic)
+│   ├── admin.js              # Admin API logic
+│   ├── channel.js            # Channel analytics endpoints
+│   ├── comment.js            # Comments management
+│   ├── like.js               # Likes/dislikes management
+│   ├── notification.js       # System notifications endpoints
+│   ├── playlist.js           # Playlist management
+│   ├── report.js             # Reports/flagging logic
+│   ├── subscription.js       # User channel subscriptions
+│   ├── user.js               # User authentication/profile logic
+│   ├── video.js              # Video upload and management
+│   ├── watchHistory.js       # Watch history endpoints
+│   └── watchLater.js         # Watch Later feature endpoints
+├── middlewares/              # Express middleware (auth, error, cache, uploads...)
+│   ├── cache.js              # Response caching middleware (Redis)
+│   ├── error.js              # Centralized error handling
+│   ├── googleAuth.js         # Google OAuth setup
+│   ├── isAdmin.js            # Admin route protection
+│   ├── isAuth.js             # JWT authentication check
+│   └── multer.js             # File upload handling
+├── models/                   # MongoDB schemas via Mongoose
+│   ├── channelAnalytics.js
+│   ├── comment.js
+│   ├── like.js
+│   ├── notification.js
+│   ├── playlist.js
+│   ├── report.js
+│   ├── subscription.js
+│   ├── user.js
+│   ├── userInteraction.js
+│   ├── userInterest.js
+│   ├── video.js
+│   ├── videoCategory.js
+│   ├── watchHistory.js
+│   └── watchLater.js
+├── routes/                   # API endpoint routing files
+│   ├── admin.js
+│   ├── channel.js
+│   ├── comment.js
+│   ├── like.js
+│   ├── notification.js
+│   ├── playlist.js
+│   ├── report.js
+│   ├── subscription.js
+│   ├── user.js
+│   ├── video.js
+│   ├── watchHistory.js
+│   └── watchLater.js
+├── validation/               # Joi schema validation & request validators
+│   ├── adminValidation.js
+│   ├── commentValidation.js
+│   ├── likeValidation.js
+│   ├── notificationValidation.js
+│   ├── playlistValidation.js
+│   ├── reportValidation.js
+│   ├── subscriptionValidation.js
+│   ├── userValidation.js
+│   ├── validateRequest.js
+│   ├── videoValidation.js
+│   ├── watchHistoryValidation.js
+│   └── watchLaterValidation.js
+├── docs/                     # Additional architecture and API documentation
+├── queues/                   # BullMQ queue initializers for background jobs
+│   ├── analyticsQueue.js
+│   ├── emailQueue.js
+│   ├── mediaQueue.js
+│   └── notificationsQueue.js
+├── scripts/                  # Helper scripts (coverage, reindexing, etc.)
+│   └── checkHandlerCoverage.js
+├── uploads/                  # Uploaded media files (storage location)
+├── utils/                    # Utility/helper functions
+│   ├── addToWatchHistory.js
+│   ├── APIError.js
+│   ├── apiLimiter.js
+│   ├── APIResponse.js
+│   ├── cloudinary.js
+│   ├── computePersonalizedScore.js
+│   ├── computeVideoScore.js
+│   ├── createNotification.js
+│   ├── createUserInteraction.js
+│   ├── logger.js
+│   ├── redisCache.js
+├── workers/                  # Dedicated BullMQ workers for background jobs
+│   ├── analyticsWorker.js
+│   ├── emailWorker.js
+│   ├── mediaWorker.js
+│   └── notificationsWorker.js
+├── __tests__/                # Unit tests
 │   └── unit/
-│       ├── controllers/           # Controller unit tests
-│       └── utils/                 # Utility unit tests
-├── LICENSE                    # License
-├── README.md                  # Project documentation
+│       ├── controllers/      # Controller unit tests
+│       └── utils/           # Utility function unit tests
+├── LICENSE                   # License file
+├── README.md                 # Project documentation
 ```
 
-## CI/CD
+---
 
-Workflow file: .github/workflows/ci.yml
+## 👤 Authors
 
-Current pipeline includes:
-- CI checks (install, lint-if-present, tests, docker build verify)
-- Docker publish to GHCR on main
-- Optional SSH deploy job when secrets are configured
+- **Eslam Saeed** ([Eslamsaeed880](https://github.com/Eslamsaeed880)) — Primary author and maintainer
 
-Recommended branch protection:
-- Require CI checks before merge
-- Disable direct push to main
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](./LICENSE).  
+See the LICENSE file for details.
 
 ---
