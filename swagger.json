@@ -19,6 +19,14 @@
         {
             "name": "Videos",
             "description": "Video upload, discovery, and management"
+        },
+        {
+            "name": "Comments",
+            "description": "Comment creation, replies, and moderation"
+        },
+        {
+            "name": "Likes",
+            "description": "Like and unlike videos/comments"
         }
     ],
     "paths": {
@@ -1298,6 +1306,510 @@
                                         "message": { "type": "string", "example": "Video not found" },
                                         "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
                                         "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/comments/{commentId}": {
+            "get": {
+                "tags": ["Comments"],
+                "summary": "Get comment by ID",
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Comment retrieved successfully" },
+                                        "message": { "$ref": "#/components/schemas/Comment" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Comment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Comment not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": ["Comments"],
+                "summary": "Update comment",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "content": "Updated comment text" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["content"],
+                                "properties": {
+                                    "content": { "type": "string", "minLength": 1, "maxLength": 1000, "example": "Updated comment text" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Comment updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Comment updated successfully" },
+                                        "message": { "$ref": "#/components/schemas/Comment" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You are not authorized to update this comment" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Comments"],
+                "summary": "Delete comment",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Comment deleted successfully" },
+                                        "message": { "type": "string", "example": "Success" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You are not authorized to delete this comment" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/comments/video/{videoId}": {
+            "get": {
+                "tags": ["Comments"],
+                "summary": "Get comments for a video",
+                "parameters": [
+                    { "name": "videoId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } },
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comments fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Comments fetched successfully" },
+                                        "message": {
+                                            "type": "object",
+                                            "properties": {
+                                                "comments": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } },
+                                                "totalComments": { "type": "integer", "example": 50 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 5 }
+                                            }
+                                        },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/comments/{videoId}": {
+            "post": {
+                "tags": ["Comments"],
+                "summary": "Create comment on video",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "videoId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "content": "Great video!" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["content"],
+                                "properties": {
+                                    "content": { "type": "string", "minLength": 1, "maxLength": 1000, "example": "Great video!" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Comment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "type": "string", "example": "Comment created successfully" },
+                                        "message": { "$ref": "#/components/schemas/Comment" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/comments/reply/{commentId}": {
+            "get": {
+                "tags": ["Comments"],
+                "summary": "Get replies for a comment",
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } },
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment replies fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "replies": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } },
+                                                "totalReplies": { "type": "integer", "example": 12 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 2 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Comment replies fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Comment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Comment not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Comments"],
+                "summary": "Reply to comment",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "content": "I agree with your point." },
+                            "schema": {
+                                "type": "object",
+                                "required": ["content"],
+                                "properties": {
+                                    "content": { "type": "string", "minLength": 1, "maxLength": 1000, "example": "I agree with your point." }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Reply created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "type": "string", "example": "Reply created successfully" },
+                                        "message": { "$ref": "#/components/schemas/Comment" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/likes": {
+            "post": {
+                "tags": ["Likes"],
+                "summary": "Like a video",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "videoId": "64b8f0c2e1a2b3c4d5e6f8a0" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["videoId"],
+                                "properties": {
+                                    "videoId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Video liked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "type": "string", "example": "Video liked successfully" },
+                                        "message": { "$ref": "#/components/schemas/Like" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Already liked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You have already liked this video" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Likes"],
+                "summary": "Unlike a video",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "videoId": "64b8f0c2e1a2b3c4d5e6f8a0" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["videoId"],
+                                "properties": {
+                                    "videoId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Video unliked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Video unliked successfully" },
+                                        "message": { "type": "string", "example": "Success" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/likes/comment": {
+            "post": {
+                "tags": ["Likes"],
+                "summary": "Like a comment",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "commentId": "64b8f0c2e1a2b3c4d5e6f901" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["commentId"],
+                                "properties": {
+                                    "commentId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Comment liked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "type": "string", "example": "Comment liked successfully" },
+                                        "message": { "$ref": "#/components/schemas/Like" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Likes"],
+                "summary": "Unlike a comment",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "commentId": "64b8f0c2e1a2b3c4d5e6f901" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["commentId"],
+                                "properties": {
+                                    "commentId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Comment unliked successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Comment unliked successfully" },
+                                        "message": { "type": "string", "example": "Success" },
+                                        "success": { "type": "boolean", "example": true }
                                     }
                                 }
                             }
