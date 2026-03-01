@@ -19,11 +19,17 @@ import watchHistoryRouter from './routes/watchHistory.js';
 import channelRouter from './routes/channel.js';
 import { errorHandler, notFound } from './middlewares/error.js';
 import passport, { configurePassport } from './middlewares/googleAuth.js';
+import swaggerUi from 'swagger-ui-express';
+import fs from 'fs';
+import path from 'path';
 
 overrideConsoleMethods();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const swaggerPath = path.join(process.cwd(), 'swagger.json');
+const swaggerSpec = JSON.parse(fs.readFileSync(swaggerPath, 'utf8'));
 
 connectDb();
 configurePassport();
@@ -32,6 +38,7 @@ configurePassport();
 app.use(compression());
 app.use(helmet());
 app.use(express.json());
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', apiLimiter);
 app.use(passport.initialize());
 app.use('/api/v1/users', userRouter);

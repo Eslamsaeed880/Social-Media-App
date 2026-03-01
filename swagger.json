@@ -1,0 +1,384 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Social Media API",
+        "description": "Social Media App is a scalable backend API for a video-focused social platform, built with Node.js and Express.\n\nIt provides complete social features including authentication (JWT + Google OAuth), user profiles, videos, comments, likes, subscriptions, playlists, watch later/history, notifications, reporting, and admin moderation.\n\nThe architecture is production-oriented: MongoDB for core data, Redis + BullMQ for background jobs (analytics, media, email, notifications), Cloudinary for media handling, and rate-limiting/security middleware for protection.\n\nIt also includes personalized recommendations and channel analytics, plus Swagger docs, Docker support, and Jest tests for reliability.",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000/api/v1",
+            "description": "Development server"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearFormat": "JWT"
+            }
+        },
+        "schemas": {
+            "ObjectId": {
+                "type": "string",
+                "pattern": "^[a-fA-F0-9]{24}$",
+                "description": "MongoDB ObjectId",
+                "example": "64b8f0c2e1a2b3c4d5e6f7f"
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "fullName": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "username": {
+                        "type": "string",
+                        "example": "john_doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john.doe@example.com"
+                    },
+                    "password": {
+                        "type": "string",
+                        "example": "$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+                    },
+                    "numberOfSubscribers": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 1250
+                    },
+                    "profilePicture": {
+                        "type": "object",
+                        "properties": {
+                            "publicId": {
+                                "type": "string",
+                                "example": "users/profile/abc123"
+                            },
+                            "url": {
+                                "type": "string",
+                                "format": "uri",
+                                "example": "https://res.cloudinary.com/demo/image/upload/v1/profile.jpg"
+                            }
+                        }
+                    },
+                    "coverImage": {
+                        "type": "object",
+                        "properties": {
+                            "publicId": {
+                                "type": "string",
+                                "example": "users/cover/def456"
+                            },
+                            "url": {
+                                "type": "string",
+                                "format": "uri",
+                                "example": "https://res.cloudinary.com/demo/image/upload/v1/cover.jpg"
+                            }
+                        }
+                    },
+                    "bio": {
+                        "type": "string",
+                        "maxLength": 300,
+                        "default": "",
+                        "example": "Content creator and tech enthusiast."
+                    },
+                    "channelTags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "default": [],
+                        "example": [
+                            "tech",
+                            "programming"
+                        ]
+                    },
+                    "socialLinks": {
+                        "type": "object",
+                        "properties": {
+                            "x": {
+                                "type": "string",
+                                "example": "https://x.com/johndoe"
+                            },
+                            "instagram": {
+                                "type": "string",
+                                "example": "https://instagram.com/johndoe"
+                            },
+                            "facebook": {
+                                "type": "string",
+                                "example": "https://facebook.com/johndoe"
+                            },
+                            "website": {
+                                "type": "string",
+                                "example": "https://johndoe.dev"
+                            }
+                        }
+                    },
+                    "isVerified": {
+                        "type": "boolean",
+                        "default": false,
+                        "example": false
+                    },
+                    "phone": {
+                        "type": "string",
+                        "pattern": "^(\\+?\\d{10,15})$",
+                        "nullable": true,
+                        "example": "+201234567890"
+                    },
+                    "gender": {
+                        "type": "string",
+                        "enum": [
+                            "male",
+                            "female"
+                        ],
+                        "nullable": true,
+                        "example": "male"
+                    },
+                    "location": {
+                        "type": "string",
+                        "default": "",
+                        "example": "Cairo, Egypt"
+                    },
+                    "birthDay": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "example": "1998-05-14T00:00:00.000Z"
+                    },
+                    "authProvider": {
+                        "type": "string",
+                        "enum": [
+                            "local",
+                            "google"
+                        ],
+                        "default": "local",
+                        "example": "local"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "user",
+                            "admin"
+                        ],
+                        "default": "user",
+                        "example": "user"
+                    },
+                    "resetToken": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": null
+                    },
+                    "resetTokenExpiry": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "example": null
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "fullName",
+                    "username",
+                    "email",
+                    "password",
+                    "authProvider",
+                    "role"
+                ]
+            },
+            "Video": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "videoFile": {
+                        "type": "object",
+                        "properties": {
+                            "publicId": {
+                                "type": "string",
+                                "example": "videos/file/abc123"
+                            },
+                            "url": {
+                                "type": "string",
+                                "format": "uri",
+                                "example": "https://res.cloudinary.com/demo/video/upload/v1/video.mp4"
+                            }
+                        },
+                        "required": [
+                            "publicId",
+                            "url"
+                        ]
+                    },
+                    "thumbnail": {
+                        "type": "object",
+                        "properties": {
+                            "publicId": {
+                                "type": "string",
+                                "example": "videos/thumb/def456"
+                            },
+                            "url": {
+                                "type": "string",
+                                "format": "uri",
+                                "example": "https://res.cloudinary.com/demo/image/upload/v1/thumb.jpg"
+                            }
+                        },
+                        "required": [
+                            "publicId",
+                            "url"
+                        ]
+                    },
+                    "title": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "How to build a scalable Node.js API"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "In this video we cover architecture, queues, caching, and testing."
+                    },
+                    "duration": {
+                        "type": "number",
+                        "example": 532
+                    },
+                    "views": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 1024
+                    },
+                    "likes": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 245
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "default": [],
+                        "example": [
+                            "nodejs",
+                            "backend"
+                        ]
+                    },
+                    "shares": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 18
+                    },
+                    "comments": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 46
+                    },
+                    "category": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Technology"
+                    },
+                    "isPublished": {
+                        "type": "boolean",
+                        "default": false,
+                        "example": true
+                    },
+                    "publisherId": {
+                        "type": "string",
+                        "description": "User ObjectId",
+                        "example": "64b8f0c2e1a2b3c4d5e6f7f"
+                    },
+                    "ageRestriction": {
+                        "type": "string",
+                        "enum": [
+                            "all",
+                            "18+"
+                        ],
+                        "default": "all",
+                        "example": "all"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "videoFile",
+                    "thumbnail",
+                    "title",
+                    "description",
+                    "duration",
+                    "publisherId"
+                ]
+            },
+            "Comment": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "content": {
+                        "type": "string",
+                        "maxLength": 500,
+                        "example": "Great video, thanks for sharing!"
+                    },
+                    "videoId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "createdBy": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "likes": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 10
+                    },
+                    "replies": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ObjectId"
+                        },
+                        "default": [],
+                        "example": [
+                            "64b8f0c2e1a2b3c4d5e6f901",
+                            "64b8f0c2e1a2b3c4d5e6f902"
+                        ]
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "content",
+                    "createdBy"
+                ]
+            }
+        }
+    }
+}
