@@ -15,6 +15,10 @@
         {
             "name": "Users",
             "description": "User authentication and profile management"
+        },
+        {
+            "name": "Videos",
+            "description": "Video upload, discovery, and management"
         }
     ],
     "paths": {
@@ -744,6 +748,563 @@
                     }
                 }
             }
+        },
+        "/videos": {
+            "get": {
+                "tags": ["Videos"],
+                "summary": "Get all published videos",
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["createdAt", "views", "likes", "comments", "title"], "example": "createdAt" } },
+                    { "name": "sortType", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"], "example": "desc" } },
+                    { "name": "query", "in": "query", "schema": { "type": "string", "example": "tutorial" } },
+                    { "name": "userId", "in": "query", "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Videos fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "totalResults": { "type": "integer", "example": 120 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 12 }
+                                            },
+                                            "example": {
+                                                "videos": [],
+                                                "totalResults": 120,
+                                                "currentPage": 1,
+                                                "totalPages": 12
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Videos fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Videos"],
+                "summary": "Upload a new video",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "example": {
+                                "title": "Node.js Queues Tutorial",
+                                "description": "Complete BullMQ guide",
+                                "tags": "[\"nodejs\",\"queues\"]",
+                                "category": "Technology",
+                                "ageRestriction": "all",
+                                "isPublished": false
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["title", "description", "videoFile", "thumbnail"],
+                                "properties": {
+                                    "title": { "type": "string", "example": "Node.js Queues Tutorial" },
+                                    "description": { "type": "string", "example": "Complete BullMQ guide" },
+                                    "tags": {
+                                        "oneOf": [
+                                            { "type": "string", "example": "nodejs,queues" },
+                                            { "type": "array", "items": { "type": "string" }, "example": ["nodejs", "queues"] }
+                                        ]
+                                    },
+                                    "category": { "type": "string", "example": "Technology" },
+                                    "ageRestriction": { "type": "string", "enum": ["all", "18+"], "example": "all" },
+                                    "isPublished": { "type": "boolean", "example": false },
+                                    "videoFile": { "type": "string", "format": "binary" },
+                                    "thumbnail": { "type": "string", "format": "binary" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Video upload queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 202 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "jobId": { "type": "string", "nullable": true, "example": "98765" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Video upload queued" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Video file and thumbnail are required",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video file and thumbnail are required" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/trending": {
+            "get": {
+                "tags": ["Videos"],
+                "summary": "Get trending videos",
+                "parameters": [
+                    { "name": "category", "in": "query", "schema": { "type": "string", "example": "good bye" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Trending videos fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "totalResults": { "type": "integer", "example": 15 },
+                                                "filters": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "category": { "type": "string", "nullable": true, "example": "tech" }
+                                                    }
+                                                }
+                                            },
+                                            "example": {
+                                                "videos": [],
+                                                "totalResults": 15,
+                                                "filters": { "category": "good bye" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Trending videos fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/my-videos": {
+            "get": {
+                "tags": ["Videos"],
+                "summary": "Get my uploaded videos",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "sortBy", "in": "query", "schema": { "type": "string", "enum": ["createdAt", "views", "likes", "comments", "title"], "example": "createdAt" } },
+                    { "name": "sortType", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"], "example": "desc" } },
+                    { "name": "query", "in": "query", "schema": { "type": "string", "example": "good bye" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Videos fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "totalResults": { "type": "integer", "example": 22 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 3 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Videos fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Unauthorized" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/recommendations": {
+            "get": {
+                "tags": ["Videos"],
+                "summary": "Get personalized recommendations",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "schema": {
+                            "oneOf": [
+                                { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 },
+                                { "type": "string", "enum": ["all"], "example": "all" }
+                            ]
+                        }
+                    },
+                    { "name": "category", "in": "query", "schema": { "type": "string", "nullable": true, "example": "good bye" } },
+                    { "name": "allowRewatch", "in": "query", "schema": { "type": "string", "enum": ["true", "false"], "example": "false" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Recommended videos fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "totalResults": { "type": "integer", "example": 35 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 4 },
+                                                "filters": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                        "category": { "type": "string", "nullable": true, "example": "good bye" },
+                                                        "allowRewatch": { "type": "boolean", "example": false },
+                                                        "source": { "type": "string", "example": "cached-trending" }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Recommended videos fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/videos/{id}": {
+            "get": {
+                "tags": ["Videos"],
+                "summary": "Get video by ID",
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "video": { "$ref": "#/components/schemas/Video" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Video fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden for unpublished video",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You are not allowed to watch this video" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": ["Videos"],
+                "summary": "Update video details",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "title": "Updated title",
+                                "description": "Updated description",
+                                "tags": ["nodejs", "backend"],
+                                "category": "good bye",
+                                "ageRestriction": "all"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "title": { "type": "string" },
+                                    "description": { "type": "string" },
+                                    "tags": {
+                                        "oneOf": [
+                                            { "type": "string", "example": "nodejs,backend" },
+                                            { "type": "array", "items": { "type": "string" }, "example": ["nodejs", "backend"] }
+                                        ]
+                                    },
+                                    "category": { "type": "string" },
+                                    "ageRestriction": { "type": "string", "enum": ["all", "18+"] }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Video updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "video": { "$ref": "#/components/schemas/Video" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Video updated successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You are not allowed to perform this action" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": ["Videos"],
+                "summary": "Toggle publish/unpublish video",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video publish state toggled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "video": { "$ref": "#/components/schemas/Video" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Video published successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You are not allowed to perform this action" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Videos"],
+                "summary": "Delete video",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "id", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Video deleted successfully" },
+                                        "message": { "type": "string", "example": "Success" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You are not allowed to perform this action" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -1024,7 +1585,7 @@
                     "category": {
                         "type": "string",
                         "nullable": true,
-                        "example": "Technology"
+                        "example": "good"
                     },
                     "isPublished": {
                         "type": "boolean",
