@@ -140,6 +140,28 @@ FRONTEND_URL=https://your-frontend-url.com
 
 ---
 
+## 🖼️ Screenshots
+
+
+Below are screenshots from the `docs/` folder:
+![main](docs/main.png)
+### Users:
+![users](docs/users.png)
+### Videos:
+![videos](docs/videos.png)
+### Comments, and Likes:
+![commentsAndLike](docs/comments&likes.png)
+### Subscriptions, Watch Later, and Notifications
+![subsAndWatchLaterAndNotifications](docs/subs&notifications&watchlater.png)
+### Playlists, and Reports
+![playlistAndReports](docs/playlists&reports.png)
+### Admin, And Channels
+![adminAndChannel](docs/admin&channels.png)
+### History
+![history](docs/watchhistory.png)
+
+---
+
 ## 📚 API Documentation
 
 **Auth labels:**
@@ -244,18 +266,6 @@ FRONTEND_URL=https://your-frontend-url.com
 - `DELETE /api/v1/admin/comments/:commentId` — Delete comment (Admin)
 
 
----
-
-## 🖼️ Screenshots
-
-![main](docs/main.png)
-![users](docs/users.png)
-![videos](docs/videos.png)
-![commentsAndLike](docs/comments&likes.png)
-![subsAndWatchLaterAndNotifications](docs/subs&notifications&watchlater.png)
-![playlistAndReports](docs/playlists&reports.png)
-![adminAndChannel](docs/admin&channels.png)
-![history](docs/watchhistory.png)
 
 ---
 
