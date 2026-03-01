@@ -718,6 +718,224 @@
                 "required": [
                     "name"
                 ]
+            },
+            "WatchHistory": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "userId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "videoId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "watchedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "userId",
+                    "videoId"
+                ]
+            },
+            "UserInteraction": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "userId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "videoId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "like",
+                            "comment",
+                            "view"
+                        ],
+                        "example": "view"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "userId",
+                    "videoId",
+                    "action"
+                ]
+            },
+            "UserInterest": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "userId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "interests": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number"
+                        },
+                        "example": {
+                            "technology": 12,
+                            "music": 4,
+                            "gaming": 7
+                        }
+                    }
+                },
+                "required": [
+                    "userId"
+                ]
+            },
+            "ChannelAnalytics": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "channelId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "totalViews": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 150000
+                    },
+                    "totalSubscribers": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 12000
+                    },
+                    "totalLikes": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 5400
+                    },
+                    "totalComments": {
+                        "type": "integer",
+                        "default": 0,
+                        "example": 980
+                    },
+                    "watchTimeMinutes": {
+                        "type": "number",
+                        "default": 0,
+                        "example": 45890
+                    },
+                    "topVideos": {
+                        "type": "array",
+                        "default": [],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "videoId": {
+                                    "$ref": "#/components/schemas/ObjectId"
+                                },
+                                "views": {
+                                    "type": "integer",
+                                    "example": 15000
+                                }
+                            }
+                        }
+                    },
+                    "genderDistribution": {
+                        "type": "object",
+                        "properties": {
+                            "male": {
+                                "type": "number",
+                                "default": 0,
+                                "example": 65
+                            },
+                            "female": {
+                                "type": "number",
+                                "default": 0,
+                                "example": 35
+                            }
+                        }
+                    },
+                    "dailyStats": {
+                        "type": "array",
+                        "default": [],
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "date": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "example": "2026-03-01T00:00:00.000Z"
+                                },
+                                "views": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "example": 2500
+                                },
+                                "subscribers": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "example": 35
+                                },
+                                "likes": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "example": 140
+                                },
+                                "comments": {
+                                    "type": "integer",
+                                    "default": 0,
+                                    "example": 20
+                                },
+                                "watchTimeMinutes": {
+                                    "type": "number",
+                                    "default": 0,
+                                    "example": 780
+                                }
+                            },
+                            "required": [
+                                "date"
+                            ]
+                        }
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "channelId"
+                ]
             }
         }
     }
