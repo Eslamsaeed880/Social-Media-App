@@ -43,6 +43,14 @@
         {
             "name": "Playlists",
             "description": "Create and manage playlists"
+        },
+        {
+            "name": "Reports",
+            "description": "User content reports"
+        },
+        {
+            "name": "Admin",
+            "description": "Admin moderation and management endpoints"
         }
     ],
     "paths": {
@@ -2578,6 +2586,639 @@
                                         "statusCode": { "type": "integer", "example": 200 },
                                         "data": { "$ref": "#/components/schemas/Playlist" },
                                         "message": { "type": "string", "example": "Video removed from playlist successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/reports": {
+            "get": {
+                "tags": ["Reports"],
+                "summary": "Get current user's reports",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User reports retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "reports": { "type": "array", "items": { "$ref": "#/components/schemas/Report" } },
+                                                "totalReports": { "type": "integer", "example": 6 },
+                                                "page": { "type": "integer", "example": 1 },
+                                                "limit": { "type": "integer", "example": 10 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User reports retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Reports"],
+                "summary": "Create a content report",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "reason": "Harassment",
+                                "description": "This comment contains abusive language.",
+                                "commentId": "64b8f0c2e1a2b3c4d5e6f901"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["reason", "description"],
+                                "properties": {
+                                    "reason": { "type": "string", "minLength": 1, "maxLength": 50, "example": "Harassment" },
+                                    "description": { "type": "string", "minLength": 1, "maxLength": 1000, "example": "This comment contains abusive language." },
+                                    "videoId": { "$ref": "#/components/schemas/ObjectId" },
+                                    "commentId": { "$ref": "#/components/schemas/ObjectId" },
+                                    "reportedUserId": { "$ref": "#/components/schemas/ObjectId" }
+                                },
+                                "oneOf": [
+                                    { "required": ["videoId"] },
+                                    { "required": ["commentId"] },
+                                    { "required": ["reportedUserId"] }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Content reported successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "$ref": "#/components/schemas/Report" },
+                                        "message": { "type": "string", "example": "Content reported successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/reports/{reportId}": {
+            "get": {
+                "tags": ["Reports"],
+                "summary": "Get report by ID",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "reportId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Report retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Report" },
+                                        "message": { "type": "string", "example": "Report retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Report not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Report not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get all reports",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["pending", "reviewed", "resolved"], "example": "pending" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reports retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "reports": { "type": "array", "items": { "$ref": "#/components/schemas/Report" } },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalResults": { "type": "integer", "example": 20 },
+                                                "totalPages": { "type": "integer", "example": 2 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Reports retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/reports/{reportId}": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get report by ID",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "reportId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Report retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Report" },
+                                        "message": { "type": "string", "example": "Report retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Report not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Report not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": ["Admin"],
+                "summary": "Admin: update report status",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "reportId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "status": "reviewed",
+                                "reviewNotes": "Reviewed by moderator"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["status"],
+                                "properties": {
+                                    "status": { "type": "string", "enum": ["pending", "reviewed", "resolved"], "example": "reviewed" },
+                                    "reviewNotes": { "type": "string", "maxLength": 1000, "example": "Reviewed by moderator" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Report status updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Report" },
+                                        "message": { "type": "string", "example": "Report status updated successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get all users",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "search", "in": "query", "schema": { "type": "string", "example": "john" } },
+                    { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["createdAt", "username", "email"], "example": "createdAt" } },
+                    { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"], "example": "desc" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Users retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "users": { "type": "array", "items": { "$ref": "#/components/schemas/User" } },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalResults": { "type": "integer", "example": 100 },
+                                                "totalPages": { "type": "integer", "example": 10 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Users retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{userId}": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get user by ID",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "userId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "properties": { "user": { "$ref": "#/components/schemas/User" } } },
+                                        "message": { "type": "string", "example": "User retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Admin"],
+                "summary": "Admin: delete user",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "userId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "User deleted successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{userId}/videos": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get videos by user",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "userId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } },
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Videos retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalResults": { "type": "integer", "example": 9 },
+                                                "totalPages": { "type": "integer", "example": 1 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Videos retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users/{userId}/comments": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get comments by user",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "userId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } },
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comments retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "comments": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalResults": { "type": "integer", "example": 13 },
+                                                "totalPages": { "type": "integer", "example": 2 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Comments retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/videos": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get all videos",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "search", "in": "query", "schema": { "type": "string", "example": "node" } },
+                    { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["createdAt", "title"], "example": "createdAt" } },
+                    { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"], "example": "desc" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Videos retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalResults": { "type": "integer", "example": 30 },
+                                                "totalPages": { "type": "integer", "example": 3 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Videos retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/videos/{videoId}": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get video by ID",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "videoId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Video" },
+                                        "message": { "type": "string", "example": "Video retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Admin"],
+                "summary": "Admin: delete video",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "videoId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "Video deleted successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/comments": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get all comments",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "search", "in": "query", "schema": { "type": "string", "example": "great" } },
+                    { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["createdAt"], "example": "createdAt" } },
+                    { "name": "order", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"], "example": "desc" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comments retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "comments": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalResults": { "type": "integer", "example": 45 },
+                                                "totalPages": { "type": "integer", "example": 5 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Comments retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/comments/{commentId}": {
+            "get": {
+                "tags": ["Admin"],
+                "summary": "Admin: get comment by ID",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Comment" },
+                                        "message": { "type": "string", "example": "Comment retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Comment not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Comment not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Admin"],
+                "summary": "Admin: delete comment",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "commentId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "Comment deleted successfully" },
                                         "success": { "type": "boolean", "example": true }
                                     }
                                 }
