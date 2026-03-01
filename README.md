@@ -246,6 +246,19 @@ FRONTEND_URL=https://your-frontend-url.com
 
 ---
 
+## 🖼️ Screenshots
+
+![main](docs/main.png)
+![users](docs/users.png)
+![videos](docs/videos.png)
+![commentsAndLike](docs/comments&likes.png)
+![subsAndWatchLaterAndNotifications](docs/subs&notifications&watchlater.png)
+![playlistAndReports](docs/playlists&reports.png)
+![adminAndChannel](docs/admin&channels.png)
+![history](docs/watchhistory.png)
+
+---
+
 ## 🗂️ Project Structure
 
 ```plaintext
