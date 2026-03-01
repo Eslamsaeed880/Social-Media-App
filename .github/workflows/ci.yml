@@ -97,12 +97,26 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
 
     steps:
+      - name: SSH Connectivity Preflight
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_PORT: ${{ secrets.SSH_PORT != '' && secrets.SSH_PORT || '22' }}
+        run: |
+          echo "Checking SSH reachability to ${SSH_HOST}:${SSH_PORT}"
+          timeout 10 bash -c "</dev/tcp/${SSH_HOST}/${SSH_PORT}" \
+            && echo "SSH port is reachable" \
+            || (echo "Cannot reach ${SSH_HOST}:${SSH_PORT} from GitHub runner" && exit 1)
+
       - name: Remote Deploy
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT != '' && secrets.SSH_PORT || '22' }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
+          timeout: 60s
+          command_timeout: 20m
+          debug: true
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin

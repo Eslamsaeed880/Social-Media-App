@@ -144,6 +144,7 @@ FRONTEND_URL=https://your-frontend-url.com
 
 
 Below are screenshots from the `docs/` folder:
+
 ![main](docs/main.png)
 ### Users:
 ![users](docs/users.png)
