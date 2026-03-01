@@ -11,6 +11,741 @@
             "description": "Development server"
         }
     ],
+    "tags": [
+        {
+            "name": "Users",
+            "description": "User authentication and profile management"
+        }
+    ],
+    "paths": {
+        "/users/signup": {
+            "post": {
+                "tags": ["Users"],
+                "summary": "Register a new user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "example": {
+                                "fullName": "John Doe",
+                                "username": "john_doe",
+                                "email": "john.doe@example.com",
+                                "password": "Password123"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["fullName", "username", "email", "password"],
+                                "properties": {
+                                    "fullName": { "type": "string" },
+                                    "username": { "type": "string" },
+                                    "email": { "type": "string", "format": "email" },
+                                    "password": { "type": "string", "format": "password" },
+                                    "avatar": { "type": "string", "format": "binary" },
+                                    "cover": { "type": "string", "format": "binary" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User registered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "createdUser": { "$ref": "#/components/schemas/User" }
+                                            },
+                                            "example": {
+                                                "createdUser": {
+                                                    "_id": "64b8f0c2e1a2b3c4d5e6f7f",
+                                                    "fullName": "John Doe",
+                                                    "username": "john_doe",
+                                                    "email": "john.doe@example.com"
+                                                }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User registered successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "User already exists",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "User with given email or username already exists" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/login": {
+            "post": {
+                "tags": ["Users"],
+                "summary": "Login user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "email": "john.doe@example.com",
+                                "password": "Password123"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["email", "password"],
+                                "properties": {
+                                    "email": { "type": "string", "format": "email" },
+                                    "password": { "type": "string", "format": "password" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user": { "$ref": "#/components/schemas/User" },
+                                                "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sample" }
+                                            },
+                                            "example": {
+                                                "user": {
+                                                    "_id": "64b8f0c2e1a2b3c4d5e6f7f",
+                                                    "username": "john_doe",
+                                                    "email": "john.doe@example.com"
+                                                },
+                                                "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sample"
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Login successful" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid email or password",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Invalid email or password" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/google": {
+            "get": {
+                "tags": ["Users"],
+                "summary": "Get Google OAuth URL",
+                "responses": {
+                    "200": {
+                        "description": "Google authentication URL generated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "authUrl": { "type": "string", "format": "uri", "example": "http://google.com/oauth" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Google authentication URL generated" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/google/callback": {
+            "get": {
+                "tags": ["Users"],
+                "summary": "Google OAuth callback",
+                "responses": {
+                    "200": {
+                        "description": "Google authentication successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user": { "$ref": "#/components/schemas/User" },
+                                                "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sample" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Google authentication successful" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/password-reset": {
+            "post": {
+                "tags": ["Users"],
+                "summary": "Request password reset",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "email": "john.doe@example.com"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["email"],
+                                "properties": {
+                                    "email": { "type": "string", "format": "email" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset email sent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": { "type": "string", "example": "Password reset email sent successfully. Please check your inbox." }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "User with this email does not exist" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/confirm-reset-password": {
+            "patch": {
+                "tags": ["Users"],
+                "summary": "Confirm password reset",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": true,
+                        "schema": { "type": "string", "example": "a3f7f2c4e5b6d7a8c9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2" }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "password": "NewPassword123"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["password"],
+                                "properties": {
+                                    "password": { "type": "string", "format": "password" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password reset successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "nullable": true, "example": null },
+                                        "message": { "type": "string", "example": "Password reset successful" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or expired reset token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Invalid or expired reset token" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/change-password": {
+            "patch": {
+                "tags": ["Users"],
+                "summary": "Change current user password",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "currentPassword": "CurrentPass123",
+                                "newPassword": "NewPass123"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["currentPassword", "newPassword"],
+                                "properties": {
+                                    "currentPassword": { "type": "string", "format": "password" },
+                                    "newPassword": { "type": "string", "format": "password" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "nullable": true, "example": null },
+                                        "message": { "type": "string", "example": "Password changed successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Unauthorized" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/@{username}": {
+            "get": {
+                "tags": ["Users"],
+                "summary": "Get user profile by username",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "example": "john_doe" }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User profile retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "user": { "$ref": "#/components/schemas/User" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User profile retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "User not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": ["Users"],
+                "summary": "Update user profile",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "example": "john_doe" }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "fullName": "John Doe",
+                                "bio": "Backend engineer",
+                                "location": "Cairo, Egypt",
+                                "gender": "male",
+                                "birthDay": "1998-05-14T00:00:00.000Z",
+                                "socialLinks": {
+                                    "x": "https://x.com/johndoe",
+                                    "instagram": "https://instagram.com/johndoe",
+                                    "facebook": "https://facebook.com/johndoe",
+                                    "website": "https://johndoe.dev"
+                                }
+                            },
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "fullName": { "type": "string" },
+                                    "bio": { "type": "string" },
+                                    "location": { "type": "string" },
+                                    "gender": {
+                                        "type": "string",
+                                        "enum": ["male", "female"]
+                                    },
+                                    "birthDay": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                    },
+                                    "socialLinks": {
+                                        "type": "object",
+                                        "properties": {
+                                            "x": { "type": "string", "format": "uri" },
+                                            "instagram": { "type": "string", "format": "uri" },
+                                            "facebook": { "type": "string", "format": "uri" },
+                                            "website": { "type": "string", "format": "uri" }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "User profile updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "updatedUser": { "$ref": "#/components/schemas/User" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User profile updated successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Unauthorized to update this profile" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "User not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/@{username}/profile-pic": {
+            "patch": {
+                "tags": ["Users"],
+                "summary": "Update user profile picture",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "example": "john_doe" }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "example": {
+                                "avatar": "<binary>"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "avatar": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Profile picture removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "updatedUser": { "$ref": "#/components/schemas/User" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User avatar removed successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "Profile picture update queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 202 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "jobId": { "type": "string", "nullable": true, "example": "12345" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User avatar update queued" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/users/@{username}/cover": {
+            "patch": {
+                "tags": ["Users"],
+                "summary": "Update user cover image",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "string", "example": "john_doe" }
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "example": {
+                                "cover": "<binary>"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "cover": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Cover image removed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "updatedUser": { "$ref": "#/components/schemas/User" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User cover image removed successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "202": {
+                        "description": "Cover image update queued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 202 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "jobId": { "type": "string", "nullable": true, "example": "12345" }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "User cover image update queued" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
     "components": {
         "securitySchemes": {
             "bearerAuth": {
