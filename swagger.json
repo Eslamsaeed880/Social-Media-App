@@ -35,6 +35,14 @@
         {
             "name": "Notifications",
             "description": "Notification inbox and read state management"
+        },
+        {
+            "name": "WatchLater",
+            "description": "Manage watch later list"
+        },
+        {
+            "name": "Playlists",
+            "description": "Create and manage playlists"
         }
     ],
     "paths": {
@@ -2184,6 +2192,393 @@
                                         "message": { "type": "string", "example": "Notification not found" },
                                         "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
                                         "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/watch-later": {
+            "get": {
+                "tags": ["WatchLater"],
+                "summary": "Get watch later list",
+                "security": [{ "bearerAuth": [] }],
+                "responses": {
+                    "200": {
+                        "description": "Watch later list retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "array",
+                                            "items": { "$ref": "#/components/schemas/WatchLater" },
+                                            "example": []
+                                        },
+                                        "message": { "type": "string", "example": "Watch later list retrieved successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": ["WatchLater"],
+                "summary": "Add video to watch later",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "videoId": "64b8f0c2e1a2b3c4d5e6f8a0" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["videoId"],
+                                "properties": {
+                                    "videoId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Video added to watch later list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "$ref": "#/components/schemas/WatchLater" },
+                                        "message": { "type": "string", "example": "Video added to watch later list" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Already in watch later",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video already in watch later list" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/watch-later/{videoId}": {
+            "delete": {
+                "tags": ["WatchLater"],
+                "summary": "Remove video from watch later",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "videoId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video removed from watch later list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "Video removed from watch later list" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Video not found in watch later list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Video not found in watch later list" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists": {
+            "post": {
+                "tags": ["Playlists"],
+                "summary": "Create playlist",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "name": "Backend Learning",
+                                "description": "Backend tutorials",
+                                "videoIds": ["64b8f0c2e1a2b3c4d5e6f8a0"],
+                                "isPublic": true,
+                                "tags": ["backend", "nodejs"]
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["name"],
+                                "properties": {
+                                    "name": { "type": "string", "minLength": 1, "maxLength": 100, "example": "Backend Learning" },
+                                    "description": { "type": "string", "example": "Backend tutorials" },
+                                    "videoIds": { "type": "array", "items": { "$ref": "#/components/schemas/ObjectId" }, "example": ["64b8f0c2e1a2b3c4d5e6f8a0"] },
+                                    "isPublic": { "type": "boolean", "example": true },
+                                    "tags": { "type": "array", "items": { "type": "string" }, "example": ["backend", "nodejs"] }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Playlist created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "$ref": "#/components/schemas/Playlist" },
+                                        "message": { "type": "string", "example": "Playlist created successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists/{playlistId}": {
+            "put": {
+                "tags": ["Playlists"],
+                "summary": "Update playlist",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "playlistId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "name": "Backend Learning Updated",
+                                "description": "Updated description",
+                                "isPublic": false,
+                                "tags": ["backend", "system-design"]
+                            },
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+                                    "description": { "type": "string" },
+                                    "isPublic": { "type": "boolean" },
+                                    "tags": { "type": "array", "items": { "type": "string" } }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Playlist updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Playlist" },
+                                        "message": { "type": "string", "example": "Playlist updated successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Playlists"],
+                "summary": "Delete playlist",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "playlistId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Playlist deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "Playlist deleted successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists/{userId}/user": {
+            "get": {
+                "tags": ["Playlists"],
+                "summary": "Get playlists by user",
+                "parameters": [
+                    { "name": "userId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Playlists fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "array", "items": { "$ref": "#/components/schemas/Playlist" }, "example": [] },
+                                        "message": { "type": "string", "example": "Playlists fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists/{playlistId}/videos": {
+            "get": {
+                "tags": ["Playlists"],
+                "summary": "Get videos in playlist",
+                "parameters": [
+                    { "name": "playlistId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } },
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Videos fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "videos": { "type": "array", "items": { "$ref": "#/components/schemas/Video" } },
+                                                "totalResults": { "type": "integer", "example": 8 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 1 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Videos fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Playlists"],
+                "summary": "Add video to playlist",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "playlistId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": { "videoId": "64b8f0c2e1a2b3c4d5e6f8a0" },
+                            "schema": {
+                                "type": "object",
+                                "required": ["videoId"],
+                                "properties": {
+                                    "videoId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Video added to playlist successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Playlist" },
+                                        "message": { "type": "string", "example": "Video added to playlist successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/playlists/{playlistId}/videos/{videoId}": {
+            "delete": {
+                "tags": ["Playlists"],
+                "summary": "Remove video from playlist",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "playlistId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } },
+                    { "name": "videoId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Video removed from playlist successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Playlist" },
+                                        "message": { "type": "string", "example": "Video removed from playlist successfully" },
+                                        "success": { "type": "boolean", "example": true }
                                     }
                                 }
                             }
