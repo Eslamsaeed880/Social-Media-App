@@ -27,6 +27,14 @@
         {
             "name": "Likes",
             "description": "Like and unlike videos/comments"
+        },
+        {
+            "name": "Subscriptions",
+            "description": "Channel subscriptions and notification preferences"
+        },
+        {
+            "name": "Notifications",
+            "description": "Notification inbox and read state management"
         }
     ],
     "paths": {
@@ -1810,6 +1818,372 @@
                                         "data": { "type": "string", "example": "Comment unliked successfully" },
                                         "message": { "type": "string", "example": "Success" },
                                         "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions": {
+            "get": {
+                "tags": ["Subscriptions"],
+                "summary": "Get user subscriptions",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User subscriptions retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "User subscriptions retrieved successfully" },
+                                        "message": {
+                                            "type": "object",
+                                            "properties": {
+                                                "subscriptions": { "type": "array", "items": { "$ref": "#/components/schemas/Subscription" } },
+                                                "totalSubscriptions": { "type": "integer", "example": 12 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 2 }
+                                            }
+                                        },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": ["Subscriptions"],
+                "summary": "Subscribe to channel",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "channelId": "64b8f0c2e1a2b3c4d5e6f7f0",
+                                "notificationsEnabled": true
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["channelId"],
+                                "properties": {
+                                    "channelId": { "$ref": "#/components/schemas/ObjectId" },
+                                    "notificationsEnabled": { "type": "boolean", "example": true }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Successfully subscribed to channel",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 201 },
+                                        "data": { "type": "string", "example": "Successfully subscribed to channel" },
+                                        "message": { "$ref": "#/components/schemas/Subscription" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "You cannot subscribe to yourself" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": ["Subscriptions"],
+                "summary": "Unsubscribe from channel",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "channelId": "64b8f0c2e1a2b3c4d5e6f7f0"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["channelId"],
+                                "properties": {
+                                    "channelId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully unsubscribed from channel",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Successfully unsubscribed from channel" },
+                                        "message": { "type": "string", "example": "Success" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/subscribers": {
+            "get": {
+                "tags": ["Subscriptions"],
+                "summary": "Get channel subscribers",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Channel subscribers retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Channel subscribers retrieved successfully" },
+                                        "message": {
+                                            "type": "object",
+                                            "properties": {
+                                                "subscribers": { "type": "array", "items": { "$ref": "#/components/schemas/Subscription" } },
+                                                "totalSubscribers": { "type": "integer", "example": 52 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 6 }
+                                            }
+                                        },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/subscriptions/notifications": {
+            "patch": {
+                "tags": ["Subscriptions"],
+                "summary": "Toggle subscription notifications",
+                "security": [{ "bearerAuth": [] }],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "example": {
+                                "channelId": "64b8f0c2e1a2b3c4d5e6f7f0"
+                            },
+                            "schema": {
+                                "type": "object",
+                                "required": ["channelId"],
+                                "properties": {
+                                    "channelId": { "$ref": "#/components/schemas/ObjectId" }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Notifications toggled successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "string", "example": "Notifications toggled successfully" },
+                                        "message": { "$ref": "#/components/schemas/Subscription" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications": {
+            "get": {
+                "tags": ["Notifications"],
+                "summary": "Get notifications",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "page", "in": "query", "schema": { "type": "integer", "minimum": 1, "example": 1 } },
+                    { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "example": 10 } },
+                    { "name": "unreadOnly", "in": "query", "schema": { "type": "boolean", "example": false } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notifications fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "notifications": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } },
+                                                "unreadCount": { "type": "integer", "example": 3 },
+                                                "totalCount": { "type": "integer", "example": 25 },
+                                                "currentPage": { "type": "integer", "example": 1 },
+                                                "totalPages": { "type": "integer", "example": 3 }
+                                            }
+                                        },
+                                        "message": { "type": "string", "example": "Notifications fetched successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read": {
+            "patch": {
+                "tags": ["Notifications"],
+                "summary": "Mark all notifications as read",
+                "security": [{ "bearerAuth": [] }],
+                "responses": {
+                    "200": {
+                        "description": "All notifications marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "All notifications marked as read" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/read/{notificationId}": {
+            "patch": {
+                "tags": ["Notifications"],
+                "summary": "Mark notification as read",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "notificationId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notification marked as read",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "$ref": "#/components/schemas/Notification" },
+                                        "message": { "type": "string", "example": "Notification marked as read" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Notification not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Notification not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/notifications/{notificationId}": {
+            "delete": {
+                "tags": ["Notifications"],
+                "summary": "Delete notification",
+                "security": [{ "bearerAuth": [] }],
+                "parameters": [
+                    { "name": "notificationId", "in": "path", "required": true, "schema": { "$ref": "#/components/schemas/ObjectId" } }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Notification deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "statusCode": { "type": "integer", "example": 200 },
+                                        "data": { "type": "object", "example": {} },
+                                        "message": { "type": "string", "example": "Notification deleted successfully" },
+                                        "success": { "type": "boolean", "example": true }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Notification not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": { "type": "boolean", "example": false },
+                                        "message": { "type": "string", "example": "Notification not found" },
+                                        "errors": { "type": "array", "items": { "type": "string" }, "example": [] },
+                                        "stack": { "type": "string", "nullable": true, "example": null }
                                     }
                                 }
                             }
