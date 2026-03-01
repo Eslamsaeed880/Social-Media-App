@@ -378,6 +378,346 @@
                     "content",
                     "createdBy"
                 ]
+            },
+            "Like": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "likedBy": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "videoId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "commentId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "likedBy"
+                ],
+                "oneOf": [
+                    {
+                        "title": "LikeVideo",
+                        "type": "object",
+                        "required": [
+                            "videoId"
+                        ],
+                        "properties": {
+                            "videoId": {
+                                "$ref": "#/components/schemas/ObjectId"
+                            }
+                        }
+                    },
+                    {
+                        "title": "LikeComment",
+                        "type": "object",
+                        "required": [
+                            "commentId"
+                        ],
+                        "properties": {
+                            "commentId": {
+                                "$ref": "#/components/schemas/ObjectId"
+                            }
+                        }
+                    }
+                ],
+                "example": {
+                    "_id": "64b8f0c2e1a2b3c4d5e6f910",
+                    "likedBy": "64b8f0c2e1a2b3c4d5e6f7f0",
+                    "videoId": "64b8f0c2e1a2b3c4d5e6f8a0",
+                    "createdAt": "2026-03-01T10:00:00.000Z",
+                    "updatedAt": "2026-03-01T12:00:00.000Z"
+                }
+            },
+            "Subscription": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "channelId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "subscriberId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "notificationsEnabled": {
+                        "type": "boolean",
+                        "default": true,
+                        "example": true
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "channelId",
+                    "subscriberId"
+                ]
+            },
+            "Notification": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "recipient": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "sender": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "like",
+                            "comment",
+                            "subscribe",
+                            "video",
+                            "reply"
+                        ],
+                        "example": "comment"
+                    },
+                    "entityType": {
+                        "type": "string",
+                        "enum": [
+                            "video",
+                            "comment"
+                        ],
+                        "nullable": true,
+                        "example": "video"
+                    },
+                    "entityId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "content": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "Alex commented on your video."
+                    },
+                    "isRead": {
+                        "type": "boolean",
+                        "default": false,
+                        "example": false
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "recipient",
+                    "sender",
+                    "type"
+                ]
+            },
+            "WatchLater": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "userId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "videoId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "userId",
+                    "videoId"
+                ]
+            },
+            "Playlist": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Backend Learning"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "example": "Collection of backend architecture videos"
+                    },
+                    "videos": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ObjectId"
+                        },
+                        "default": [],
+                        "example": [
+                            "64b8f0c2e1a2b3c4d5e6f8a0",
+                            "64b8f0c2e1a2b3c4d5e6f8a1"
+                        ]
+                    },
+                    "isPublic": {
+                        "type": "boolean",
+                        "default": true,
+                        "example": true
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "default": [],
+                            "example": [
+                                "backend",
+                                "nodejs"
+                            ]
+                        }
+                    },
+                    "createdBy": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "name",
+                    "createdBy"
+                ]
+            },
+            "Report": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "reportedBy": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "reportedUser": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "reason": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "example": "Harassment"
+                    },
+                    "description": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "example": "This user posted repeated abusive comments under multiple videos."
+                    },
+                    "videoId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "commentId": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "reviewed",
+                            "resolved"
+                        ],
+                        "default": "pending",
+                        "example": "pending"
+                    },
+                    "reviewNotes": {
+                        "type": "string",
+                        "maxLength": 1000,
+                        "nullable": true,
+                        "example": "Under review by moderation team."
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "reportedBy",
+                    "reason",
+                    "description"
+                ]
+            },
+            "VideoCategory": {
+                "type": "object",
+                "properties": {
+                    "_id": {
+                        "$ref": "#/components/schemas/ObjectId"
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "example": "Technology"
+                    },
+                    "description": {
+                        "type": "string",
+                        "default": "",
+                        "example": "Videos related to software engineering and programming."
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T10:00:00.000Z"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-03-01T12:00:00.000Z"
+                    }
+                },
+                "required": [
+                    "name"
+                ]
             }
         }
     }
